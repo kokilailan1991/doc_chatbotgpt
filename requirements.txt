@@ -8,7 +8,7 @@ PyMuPDF
 PyPDF2
 requests
 tqdm
-python-dotenv
 gunicorn
 langchain-community
 tiktoken
+faiss-cpu
