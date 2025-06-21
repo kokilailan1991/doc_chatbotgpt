@@ -4,3 +4,9 @@ openai
 python-dotenv
 werkzeug
 flask_cors
+PyMuPDF
+PyPDF2
+requests
+tqdm
+python-dotenv
+gunicorn
