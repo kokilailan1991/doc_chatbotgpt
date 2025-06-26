@@ -4,14 +4,16 @@ from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import fitz  # PyMuPDF
 from dotenv import load_dotenv
+import requests
+from bs4 import BeautifulSoup
 
-from langchain_community.embeddings import OpenAIEmbeddings
+# Updated imports
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.vectorstores import FAISS
-from langchain_community.chat_models import ChatOpenAI
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.chains import RetrievalQA
 
-# Load API key from .env
+# Load API key
 load_dotenv()
 
 app = Flask(__name__, static_url_path="", static_folder=".")
@@ -47,30 +49,46 @@ def upload_file():
         if not filename.endswith(".pdf"):
             return jsonify({"error": "Only PDF files are supported"}), 400
 
-        # Read PDF
         text = ""
         doc = fitz.open(path)
         for page in doc:
             text += page.get_text()
 
-        # Split text
-        text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-        docs = text_splitter.create_documents([text])
+        docs = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100).create_documents([text])
 
-        # Embed and store
         openai_key = os.getenv("OPENAI_API_KEY")
-        if not openai_key:
-            raise Exception("OPENAI_API_KEY not found in environment!")
-
         embeddings = OpenAIEmbeddings(openai_api_key=openai_key)
         vectordb = FAISS.from_documents(docs, embeddings)
-        retriever = vectordb.as_retriever()
-        retriever_cache["active"] = retriever
+        retriever_cache["active"] = vectordb.as_retriever()
 
         return jsonify({"message": "✅ File uploaded and processed successfully."})
 
     except Exception as e:
         print(f"❌ Upload error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/fetch-url", methods=["POST"])
+def fetch_url():
+    try:
+        url = request.get_json().get("url")
+        if not url:
+            return jsonify({"error": "No URL provided"}), 400
+
+        page = requests.get(url)
+        soup = BeautifulSoup(page.text, "html.parser")
+        text = soup.get_text()
+
+        docs = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100).create_documents([text])
+
+        openai_key = os.getenv("OPENAI_API_KEY")
+        embeddings = OpenAIEmbeddings(openai_api_key=openai_key)
+        vectordb = FAISS.from_documents(docs, embeddings)
+        retriever_cache["active"] = vectordb.as_retriever()
+
+        return jsonify({"message": "✅ Website content fetched and processed."})
+
+    except Exception as e:
+        print(f"❌ URL Fetch error: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route("/ask", methods=["POST"])
@@ -79,14 +97,15 @@ def ask_question():
         query = request.json.get("question")
         retriever = retriever_cache.get("active")
         if not retriever:
-            return jsonify({"error": "Please upload a file first."}), 400
+            return jsonify({"error": "Please upload a file or fetch a website first."}), 400
 
         qa = RetrievalQA.from_chain_type(
             llm=ChatOpenAI(temperature=0, openai_api_key=os.getenv("OPENAI_API_KEY")),
             chain_type="stuff",
             retriever=retriever
         )
-        result = qa.run(query)
+
+        result = qa.invoke(query)
         return jsonify({"answer": result})
 
     except Exception as e:
