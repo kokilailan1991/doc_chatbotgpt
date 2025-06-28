@@ -12,3 +12,4 @@ gunicorn
 langchain-community
 tiktoken
 faiss-cpu
+beautifulsoup4
