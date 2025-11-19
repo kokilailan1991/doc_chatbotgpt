@@ -1,0 +1,16 @@
+flask
+langchain
+openai
+python-dotenv
+werkzeug
+flask_cors
+PyMuPDF
+PyPDF2
+requests
+tqdm
+gunicorn
+langchain-community
+tiktoken
+faiss-cpu
+beautifulsoup4
+langchain-openai

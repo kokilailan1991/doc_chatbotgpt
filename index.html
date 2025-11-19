@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Document Chatbot</title>
+  <link href="styles.css" rel="stylesheet" />
+</head>
+<body>
+  <div class="chat-container">
+    <h1>📄 <span>AI Document Chatbot</span></h1>
+
+    <form id="uploadForm" enctype="multipart/form-data">
+      <label for="fileUpload">Upload a PDF File:</label>
+      <input type="file" id="fileUpload" name="file" />
+      <button type="submit">Upload</button>
+    </form>
+
+    <form id="urlForm">
+      <label for="urlInput">Or Enter Website URL:</label>
+      <input type="url" id="urlInput" name="url" placeholder="https://example.com"/>
+      <button type="submit">Fetch & Analyze</button>
+    </form>
+
+    <div id="fileStatus">✅ Ready for document analysis...</div>
+
+    <div id="chatThread" class="chat-thread"></div>
+
+    <textarea id="questionInput" placeholder="Ask your question about the content..."></textarea>
+    <button type="button" onclick="addMessage()">Ask</button>
+  </div>
+
+  <script>
+    document.querySelector("#uploadForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fileInput = document.querySelector("#fileUpload");
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+
+      const res = await fetch("/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      document.getElementById("fileStatus").innerText = data.message || data.error;
+    });
+
+    document.querySelector("#urlForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const url = document.getElementById("urlInput").value;
+      const res = await fetch("/fetch-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+
+      const data = await res.json();
+      document.getElementById("fileStatus").innerText = data.message || data.error;
+    });
+
+    async function addMessage() {
+      const question = document.getElementById('questionInput').value;
+      if (!question.trim()) return;
+
+      const chat = document.getElementById('chatThread');
+      const userMsg = document.createElement('div');
+      userMsg.className = 'chat user';
+      userMsg.innerHTML = '<strong>You:</strong> ' + question;
+      chat.appendChild(userMsg);
+
+      const res = await fetch("/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question }),
+      });
+
+      const data = await res.json();
+      let answer = data.answer?.result || data.answer || data.error;
+
+      const botMsg = document.createElement('div');
+      botMsg.className = 'chat bot';
+      botMsg.innerHTML = '<strong>Bot:</strong> ' + answer;
+      chat.appendChild(botMsg);
+
+      document.getElementById('questionInput').value = '';
+      chat.scrollTop = chat.scrollHeight;
+    }
+  </script>
+</body>
+</html>
