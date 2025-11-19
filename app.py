@@ -1,20 +1,30 @@
 import os
+import sys
+
+# Load environment variables first
+from dotenv import load_dotenv
+load_dotenv()
+
+# Import Flask and basic dependencies
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
-import fitz  # PyMuPDF
-from dotenv import load_dotenv
-import requests
-from bs4 import BeautifulSoup
 
-# Updated imports
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain_community.vectorstores import FAISS
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.chains import RetrievalQA
-
-# Load API key
-load_dotenv()
+# Import other dependencies with error handling
+try:
+    import fitz  # PyMuPDF
+    import requests
+    from bs4 import BeautifulSoup
+    
+    # LangChain imports
+    from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+    from langchain_community.vectorstores import FAISS
+    from langchain.text_splitter import CharacterTextSplitter
+    from langchain.chains import RetrievalQA
+except ImportError as e:
+    print(f"❌ Import error: {e}", file=sys.stderr)
+    print("Please ensure all dependencies are installed.", file=sys.stderr)
+    sys.exit(1)
 
 app = Flask(__name__, static_url_path="", static_folder=".")
 CORS(app)
@@ -27,6 +37,11 @@ retriever_cache = {}
 @app.route("/", methods=["GET"])
 def serve_index():
     return send_from_directory(".", "index.html")
+
+@app.route("/health", methods=["GET"])
+def health_check():
+    """Health check endpoint for Railway"""
+    return jsonify({"status": "ok", "message": "Server is running"}), 200
 
 @app.route("/styles.css", methods=["GET"])
 def serve_css():
