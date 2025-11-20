@@ -20,7 +20,11 @@ try:
     from langchain_openai import OpenAIEmbeddings, ChatOpenAI
     from langchain_community.vectorstores import FAISS
     from langchain_text_splitters import CharacterTextSplitter
-    from langchain.chains import RetrievalQA
+    # Try to import RetrievalQA - will handle import errors in ask_question if needed
+    try:
+        from langchain.chains import RetrievalQA
+    except ImportError:
+        RetrievalQA = None  # Will use alternative method if not available
 except ImportError as e:
     print(f"❌ Import error: {e}", file=sys.stderr)
     print("Please ensure all dependencies are installed.", file=sys.stderr)
@@ -114,17 +118,37 @@ def ask_question():
         if not retriever:
             return jsonify({"error": "Please upload a file or fetch a website first."}), 400
 
-        qa = RetrievalQA.from_chain_type(
-            llm=ChatOpenAI(temperature=0, openai_api_key=os.getenv("OPENAI_API_KEY")),
-            chain_type="stuff",
-            retriever=retriever
-        )
+        # Use RetrievalQA with proper error handling
+        try:
+            qa = RetrievalQA.from_chain_type(
+                llm=ChatOpenAI(temperature=0, openai_api_key=os.getenv("OPENAI_API_KEY")),
+                chain_type="stuff",
+                retriever=retriever,
+                return_source_documents=False
+            )
+            result = qa.invoke({"query": query})
+            # Handle different result formats
+            if isinstance(result, dict):
+                answer = result.get("result", str(result))
+            else:
+                answer = str(result)
+        except Exception as chain_error:
+            # Fallback: try alternative import or method
+            print(f"RetrievalQA error: {chain_error}, trying alternative approach")
+            from langchain.chains import ConversationalRetrievalChain
+            qa = ConversationalRetrievalChain.from_llm(
+                llm=ChatOpenAI(temperature=0, openai_api_key=os.getenv("OPENAI_API_KEY")),
+                retriever=retriever
+            )
+            result = qa({"question": query, "chat_history": []})
+            answer = result.get("answer", str(result))
 
-        result = qa.invoke(query)
-        return jsonify({"answer": result})
+        return jsonify({"answer": answer})
 
     except Exception as e:
         print(f"❌ Ask error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
