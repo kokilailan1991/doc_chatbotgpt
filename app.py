@@ -19,7 +19,7 @@ try:
     # LangChain imports
     from langchain_openai import OpenAIEmbeddings, ChatOpenAI
     from langchain_community.vectorstores import FAISS
-    from langchain.text_splitter import CharacterTextSplitter
+    from langchain_text_splitters import CharacterTextSplitter
     from langchain.chains import RetrievalQA
 except ImportError as e:
     print(f"❌ Import error: {e}", file=sys.stderr)

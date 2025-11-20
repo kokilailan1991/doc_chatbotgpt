@@ -10,6 +10,7 @@ requests
 tqdm
 gunicorn
 langchain-community
+langchain-text-splitters
 tiktoken
 faiss-cpu
 beautifulsoup4
