@@ -1,63 +1,115 @@
 {% extends "base.html" %}
 
 {% block content %}
-<!-- Banner -->
-<div class="viral-banner">
-  <p>🔥 <strong>Free for now.</strong> Instant AI analysis. No login needed.</p>
-</div>
-
-<div class="workflow-container">
-  <!-- Sample Result Cards -->
-  <div class="sample-cards-section">
-    <h2>See What You Can Do</h2>
-    <div class="sample-cards-grid">
-      <div class="sample-card">
-        <h3>📄 Resume Analyzer</h3>
-        <p>ATS Score: 85/100</p>
-        <p>✅ Well-structured | ⚠️ Add more keywords</p>
-        <a href="/resume-analyzer" class="card-link">Try Now →</a>
-      </div>
-      <div class="sample-card">
-        <h3>📊 Business Docs</h3>
-        <p>Invoice Analysis Complete</p>
-        <p>✅ 12 line items extracted | 💰 Total: $5,240</p>
-        <a href="/business-docs-ai" class="card-link">Try Now →</a>
-      </div>
-      <div class="sample-card">
-        <h3>🚢 EDI Validator</h3>
-        <p>BAPLIE Validated</p>
-        <p>✅ Format: BAPLIE | 📦 45 containers</p>
-        <a href="/edi-validator" class="card-link">Try Now →</a>
-      </div>
+<!-- Hero Section -->
+<section class="hero-section">
+  <div class="hero-container">
+    <h1 class="hero-headline">Your AI Document Analyst</h1>
+    <p class="hero-subheadline">Analyze resumes, invoices, contracts, EDI files, and websites with instant AI insights. Free. No login needed.</p>
+    <div class="hero-ctas">
+      <a href="#resume-tab" onclick="switchTab('resume'); return false;" class="hero-btn hero-btn-primary">Try Resume Analyzer</a>
+      <a href="#edi-tab" onclick="switchTab('edi'); return false;" class="hero-btn hero-btn-secondary">Try Logistics EDI Validator</a>
     </div>
   </div>
+</section>
 
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('resume')">Resume</button>
-    <button class="tab-btn" onclick="switchTab('business')">Business Docs</button>
-    <button class="tab-btn" onclick="switchTab('edi')">Logistics EDI</button>
-    <button class="tab-btn" onclick="switchTab('website')">Website Analyzer</button>
+<!-- Feature Grid -->
+<section class="features-section">
+  <div class="features-container">
+    <div class="feature-card" onclick="switchTab('resume'); document.getElementById('resume-tab').scrollIntoView({behavior: 'smooth'});">
+      <div class="feature-icon">📄</div>
+      <h3 class="feature-title">Resume Analyzer</h3>
+      <ul class="feature-list">
+        <li>ATS Score (0-100)</li>
+        <li>JD Match Analysis</li>
+        <li>Grammar & Clarity Fixes</li>
+      </ul>
+      <button class="feature-btn">Try Now →</button>
+    </div>
+    
+    <div class="feature-card" onclick="switchTab('business'); document.getElementById('business-tab').scrollIntoView({behavior: 'smooth'});">
+      <div class="feature-icon">📊</div>
+      <h3 class="feature-title">Business Docs</h3>
+      <ul class="feature-list">
+        <li>Invoice Analysis</li>
+        <li>Contract Review</li>
+        <li>Risk Detection</li>
+      </ul>
+      <button class="feature-btn">Try Now →</button>
+    </div>
+    
+    <div class="feature-card" onclick="switchTab('edi'); document.getElementById('edi-tab').scrollIntoView({behavior: 'smooth'});">
+      <div class="feature-icon">🚢</div>
+      <h3 class="feature-title">EDI Validator</h3>
+      <ul class="feature-list">
+        <li>BAPLIE Validation</li>
+        <li>Error Detection</li>
+        <li>Container Analysis</li>
+      </ul>
+      <button class="feature-btn">Try Now →</button>
+    </div>
+    
+    <div class="feature-card" onclick="switchTab('website'); document.getElementById('website-tab').scrollIntoView({behavior: 'smooth'});">
+      <div class="feature-icon">🌐</div>
+      <h3 class="feature-title">Website Analyzer</h3>
+      <ul class="feature-list">
+        <li>SEO Score</li>
+        <li>Content Analysis</li>
+        <li>Keyword Extraction</li>
+      </ul>
+      <button class="feature-btn">Try Now →</button>
+    </div>
+  </div>
+</section>
+
+<!-- Main Content Container -->
+<div class="main-content-wrapper">
+  <!-- Tabs Section -->
+  <div class="tabs-wrapper">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('resume')">
+        <span class="tab-icon">📄</span>
+        <span>Resume</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('business')">
+        <span class="tab-icon">📊</span>
+        <span>Business Docs</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('edi')">
+        <span class="tab-icon">🚢</span>
+        <span>Logistics EDI</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('website')">
+        <span class="tab-icon">🌐</span>
+        <span>Website Analyzer</span>
+      </button>
+    </div>
   </div>
 
   <!-- Resume Tab -->
   <div id="resume-tab" class="tab-content active">
-    <h2>📄 Resume Analyzer</h2>
+    <h2 class="tab-title">📄 Resume Analyzer</h2>
     <p class="tab-description">Upload your resume to get ATS score, match with job descriptions, and get AI-powered improvements.</p>
     
     <button onclick="tryDemoResume()" class="demo-btn-large">✨ Try Example Resume</button>
     
-    <div class="upload-section">
+    <div class="upload-card">
+      <h3 class="upload-header">Upload Document</h3>
       <form id="resumeUploadForm" enctype="multipart/form-data">
-        <label>Upload Resume:</label>
-        <input type="file" id="resumeFile" accept=".pdf" />
-        <button type="submit">Upload Resume</button>
+        <label class="upload-label">Upload Resume:</label>
+        <input type="file" id="resumeFile" accept=".pdf" class="file-input" />
+        <button type="submit" class="upload-btn">Upload Resume</button>
       </form>
       
-      <form id="jdUploadForm" enctype="multipart/form-data" style="margin-top: 15px;">
-        <label>Upload Job Description (Optional):</label>
-        <input type="file" id="jdFile" accept=".pdf" />
-        <button type="submit">Upload JD</button>
+      <form id="jdUploadForm" enctype="multipart/form-data" class="upload-form-secondary">
+        <label class="upload-label">Upload Job Description (Optional):</label>
+        <input type="file" id="jdFile" accept=".pdf" class="file-input" />
+        <button type="submit" class="upload-btn">Upload JD</button>
       </form>
+      
+      <div class="sample-links">
+        <a href="#" onclick="tryDemoResume(); return false;">Try Sample Resume</a>
+      </div>
     </div>
 
     <div id="resumeStatus" class="status-message"></div>
@@ -76,16 +128,17 @@
 
   <!-- Business Docs Tab -->
   <div id="business-tab" class="tab-content">
-    <h2>📊 Business Documents</h2>
+    <h2 class="tab-title">📊 Business Documents</h2>
     <p class="tab-description">Analyze contracts, invoices, and business documents with AI workflows.</p>
     
     <button onclick="tryDemoBusiness()" class="demo-btn-large">✨ Analyze Sample Invoice</button>
     
-    <div class="upload-section">
+    <div class="upload-card">
+      <h3 class="upload-header">Upload Document</h3>
       <form id="businessUploadForm" enctype="multipart/form-data">
-        <label>Upload Document:</label>
-        <input type="file" id="businessFile" accept=".pdf" />
-        <button type="submit">Upload</button>
+        <label class="upload-label">Upload Document:</label>
+        <input type="file" id="businessFile" accept=".pdf" class="file-input" />
+        <button type="submit" class="upload-btn">Upload</button>
       </form>
     </div>
 
@@ -100,7 +153,7 @@
       <button onclick="shareResult()" class="workflow-btn share">Share Result</button>
     </div>
 
-    <div class="output-format-selector" style="margin-top: 15px;">
+    <div class="output-format-selector">
       <label>Export Format:</label>
       <select id="outputFormat">
         <option value="json">JSON</option>
@@ -117,17 +170,22 @@
 
   <!-- EDI Tab -->
   <div id="edi-tab" class="tab-content">
-    <h2>🚢 Logistics EDI Analyzer</h2>
+    <h2 class="tab-title">🚢 Logistics EDI Analyzer</h2>
     <p class="tab-description">Validate and analyze EDI documents (BAPLIE, MOVINS, COPRAR).</p>
     
     <button onclick="tryDemoEDI()" class="demo-btn-large">✨ Try Sample BAPLIE</button>
     
-    <div class="upload-section">
+    <div class="upload-card">
+      <h3 class="upload-header">Upload EDI Document</h3>
       <form id="ediUploadForm" enctype="multipart/form-data">
-        <label>Upload EDI Document:</label>
-        <input type="file" id="ediFile" accept=".edi,.txt,.baplie,.movins,.coprar" />
-        <button type="submit">Upload & Analyze</button>
+        <label class="upload-label">Upload EDI Document:</label>
+        <input type="file" id="ediFile" accept=".edi,.txt,.baplie,.movins,.coprar" class="file-input" />
+        <button type="submit" class="upload-btn">Upload & Analyze</button>
       </form>
+      
+      <div class="sample-links">
+        <a href="#" onclick="tryDemoEDI(); return false;">Try Sample BAPLIE</a>
+      </div>
     </div>
 
     <div id="ediStatus" class="status-message"></div>
@@ -136,16 +194,19 @@
 
   <!-- Website Tab -->
   <div id="website-tab" class="tab-content">
-    <h2>🌐 Website Analyzer</h2>
+    <h2 class="tab-title">🌐 Website Analyzer</h2>
     <p class="tab-description">Analyze website content and extract insights.</p>
     
     <button onclick="tryDemoWebsite()" class="demo-btn-large">✨ Analyze aigpt.co.in</button>
     
-    <form id="urlForm">
-      <label>Enter Website URL:</label>
-      <input type="url" id="urlInput" placeholder="https://example.com" />
-      <button type="submit">Analyze Website</button>
-    </form>
+    <div class="upload-card">
+      <h3 class="upload-header">Enter Website URL</h3>
+      <form id="urlForm">
+        <label class="upload-label">Enter Website URL:</label>
+        <input type="url" id="urlInput" placeholder="https://example.com" class="url-input" />
+        <button type="submit" class="upload-btn">Analyze Website</button>
+      </form>
+    </div>
 
     <div id="websiteStatus" class="status-message"></div>
 
@@ -169,9 +230,25 @@ function switchTab(tabName) {
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
   
   // Show selected tab
-  document.getElementById(tabName + '-tab').classList.add('active');
-  event.target.classList.add('active');
+  const targetTab = document.getElementById(tabName + '-tab');
+  if (targetTab) {
+    targetTab.classList.add('active');
+  }
+  
+  // Update active button
+  const buttons = document.querySelectorAll('.tab-btn');
+  buttons.forEach(btn => {
+    if (btn.textContent.includes(tabName === 'resume' ? 'Resume' : tabName === 'business' ? 'Business' : tabName === 'edi' ? 'EDI' : 'Website')) {
+      btn.classList.add('active');
+    }
+  });
+  
   currentTab = tabName;
+  
+  // Scroll to tab content
+  setTimeout(() => {
+    targetTab?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
 }
 
 // Resume Analyzer Functions
@@ -183,8 +260,8 @@ document.getElementById("resumeUploadForm").addEventListener("submit", async (e)
   
   const res = await fetch("/api/upload-multi", { method: "POST", body: formData });
   const data = await res.json();
-  document.getElementById("resumeStatus").innerText = data.message || data.error;
-  if (data.message) document.getElementById("resumeActions").style.display = "block";
+  document.getElementById("resumeStatus").innerHTML = data.message ? `<div class="success-message">✅ ${data.message}</div>` : `<div class="error-message">❌ ${data.error}</div>`;
+  if (data.message) document.getElementById("resumeActions").style.display = "flex";
 });
 
 document.getElementById("jdUploadForm").addEventListener("submit", async (e) => {
@@ -195,7 +272,8 @@ document.getElementById("jdUploadForm").addEventListener("submit", async (e) => 
   
   const res = await fetch("/api/upload-multi", { method: "POST", body: formData });
   const data = await res.json();
-  document.getElementById("resumeStatus").innerText += "\n" + (data.message || data.error);
+  const currentStatus = document.getElementById("resumeStatus").innerHTML;
+  document.getElementById("resumeStatus").innerHTML = currentStatus + (data.message ? `<div class="success-message">✅ ${data.message}</div>` : `<div class="error-message">❌ ${data.error}</div>`);
 });
 
 async function getATSScore() {
@@ -258,8 +336,8 @@ document.getElementById("businessUploadForm").addEventListener("submit", async (
   
   const res = await fetch("/upload", { method: "POST", body: formData });
   const data = await res.json();
-  document.getElementById("businessStatus").innerText = data.message || data.error;
-  if (data.message) document.getElementById("businessActions").style.display = "block";
+  document.getElementById("businessStatus").innerHTML = data.message ? `<div class="success-message">✅ ${data.message}</div>` : `<div class="error-message">❌ ${data.error}</div>`;
+  if (data.message) document.getElementById("businessActions").style.display = "flex";
 });
 
 async function extractInsights() {
@@ -323,7 +401,7 @@ document.getElementById("ediUploadForm").addEventListener("submit", async (e) =>
   e.preventDefault();
   const file = document.getElementById("ediFile").files[0];
   if (!file) {
-    document.getElementById("ediStatus").innerText = "Please select a file";
+    document.getElementById("ediStatus").innerHTML = '<div class="error-message">Please select a file</div>';
     return;
   }
   
@@ -334,7 +412,6 @@ document.getElementById("ediUploadForm").addEventListener("submit", async (e) =>
   document.getElementById("ediResults").innerHTML = "";
   
   try {
-    // Use new analyze-edi endpoint directly with file
     const res = await fetch("/api/analyze-edi", {
       method: "POST",
       body: formData
@@ -346,7 +423,6 @@ document.getElementById("ediUploadForm").addEventListener("submit", async (e) =>
     } else {
       document.getElementById("ediStatus").innerHTML = '<div class="success-message">✅ EDI file analyzed successfully!</div>';
       displayEDIResults("ediResults", data);
-      // Auto-scroll to results
       document.getElementById("ediResults").scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   } catch (error) {
@@ -378,9 +454,8 @@ document.getElementById("urlForm").addEventListener("submit", async (e) => {
       document.getElementById("websiteStatus").innerHTML = `<div class="error-message">❌ ${data.error}</div>`;
     } else {
       document.getElementById("websiteStatus").innerHTML = '<div class="success-message">✅ Website analyzed successfully!</div>';
-      document.getElementById("websiteActions").style.display = "block";
+      document.getElementById("websiteActions").style.display = "flex";
       displayWebsiteResults("websiteResults", data);
-      // Auto-scroll to results
       document.getElementById("websiteResults").scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   } catch (error) {
@@ -438,7 +513,7 @@ async function tryDemoWebsite() {
       document.getElementById("websiteStatus").innerHTML = `<div class="error-message">❌ ${data.error}</div>`;
     } else {
       document.getElementById("websiteStatus").innerHTML = '<div class="success-message">✅ Demo analysis complete!</div>';
-      document.getElementById("websiteActions").style.display = "block";
+      document.getElementById("websiteActions").style.display = "flex";
       displayWebsiteResults("websiteResults", data);
     }
   } catch (error) {
@@ -458,7 +533,7 @@ function shareResult() {
 }
 
 function copyResult() {
-  const results = document.querySelectorAll('.results-section pre');
+  const results = document.querySelectorAll('.result-card pre');
   if (results.length > 0) {
     navigator.clipboard.writeText(results[0].innerText);
     alert("Results copied to clipboard!");
@@ -468,17 +543,13 @@ function copyResult() {
 // Utility Functions
 function displayResults(containerId, data) {
   const container = document.getElementById(containerId);
-  container.innerHTML = `<div class="result-card"><h3>Your Results</h3><pre class="result-json">${JSON.stringify(data, null, 2)}</pre><button onclick="copyResult()" class="copy-btn">📋 Copy Result</button></div>`;
+  container.innerHTML = `<div class="result-card fade-in"><h3 class="result-header">AI Results</h3><pre class="result-json">${JSON.stringify(data, null, 2)}</pre><button onclick="copyResult()" class="copy-btn">📋 Copy Result</button></div>`;
 }
 
 function displayEDIResults(containerId, data) {
   const container = document.getElementById(containerId);
-  let html = '<div class="result-card"><h3>📊 EDI Analysis Results</h3>';
+  let html = '<div class="result-card fade-in"><h3 class="result-header">📊 EDI Analysis Results</h3>';
   
-  // Format Type
-  html += `<div class="result-section"><h4>Format: ${data.formatType || 'Unknown'}</h4></div>`;
-  
-  // Validation Status
   const validation = data.validation || {};
   if (validation.isValid) {
     html += '<div class="result-section success-card"><h4>✅ Validation: PASSED</h4></div>';
@@ -486,96 +557,53 @@ function displayEDIResults(containerId, data) {
     html += '<div class="result-section error-card"><h4>❌ Validation: FAILED</h4></div>';
   }
   
-  // Errors
   if (validation.errors && validation.errors.length > 0) {
     html += '<div class="result-section error-card"><h4>❌ Errors:</h4><ul>';
     validation.errors.forEach(err => html += `<li>${err}</li>`);
     html += '</ul></div>';
   }
   
-  // Warnings
   if (validation.warnings && validation.warnings.length > 0) {
     html += '<div class="result-section warning-card"><h4>⚠️ Warnings:</h4><ul>';
     validation.warnings.forEach(warn => html += `<li>${warn}</li>`);
     html += '</ul></div>';
   }
   
-  // Summary
   if (data.summary) {
     html += `<div class="result-section"><h4>📝 Summary:</h4><p>${data.summary}</p></div>`;
   }
   
-  // Containers
   if (validation.containersFound > 0) {
-    html += `<div class="result-section"><h4>📦 Containers Found: ${validation.containersFound}</h4>`;
-    if (validation.containerNumbers && validation.containerNumbers.length > 0) {
-      html += '<ul>';
-      validation.containerNumbers.forEach(cont => html += `<li>${cont}</li>`);
-      html += '</ul>';
-    }
-    html += '</div>';
+    html += `<div class="result-section"><h4>📦 Containers Found: ${validation.containersFound}</h4></div>`;
   }
   
-  // Suggestions
-  if (validation.suggestions && validation.suggestions.length > 0) {
-    html += '<div class="result-section suggestion-card"><h4>💡 Suggestions:</h4><ul>';
-    validation.suggestions.forEach(sugg => html += `<li>${sugg}</li>`);
-    html += '</ul></div>';
-  }
-  
-  // Full JSON (collapsible)
   html += `<details class="result-section"><summary>View Full JSON</summary><pre class="result-json">${JSON.stringify(data, null, 2)}</pre></details>`;
-  html += '<button onclick="copyResult()" class="copy-btn">📋 Copy Result</button>';
-  html += '</div>';
+  html += '<button onclick="copyResult()" class="copy-btn">📋 Copy Result</button></div>';
   
   container.innerHTML = html;
 }
 
 function displayResumeResults(containerId, data, type = "ats") {
   const container = document.getElementById(containerId);
-  let html = '<div class="result-card"><h3>📄 Resume Analysis Results</h3>';
+  let html = '<div class="result-card fade-in"><h3 class="result-header">📄 Resume Analysis Results</h3>';
   
   if (type === "full") {
-    // Full Report
     const atsScore = data.atsScore || {};
     const overallScore = atsScore.overallScore || 0;
-    
     html += `<div class="result-section success-card"><h4>🎯 Overall ATS Score: <span class="score-badge">${overallScore}/100</span></h4></div>`;
     
-    // Strengths
     if (atsScore.strengths && atsScore.strengths.length > 0) {
       html += '<div class="result-section suggestion-card"><h4>✅ Strengths:</h4><ul>';
       atsScore.strengths.forEach(str => html += `<li>${str}</li>`);
       html += '</ul></div>';
     }
     
-    // Weaknesses
     if (atsScore.weaknesses && atsScore.weaknesses.length > 0) {
       html += '<div class="result-section error-card"><h4>⚠️ Weaknesses:</h4><ul>';
       atsScore.weaknesses.forEach(weak => html += `<li>${weak}</li>`);
       html += '</ul></div>';
     }
-    
-    // Recommendations
-    if (atsScore.recommendations && atsScore.recommendations.length > 0) {
-      html += '<div class="result-section suggestion-card"><h4>💡 Recommendations:</h4><ul>';
-      atsScore.recommendations.forEach(rec => html += `<li>${rec}</li>`);
-      html += '</ul></div>';
-    }
-    
-    // Skill Gaps
-    if (data.skillGaps && data.skillGaps.missingSkills && data.skillGaps.missingSkills.length > 0) {
-      html += '<div class="result-section warning-card"><h4>📊 Missing Skills:</h4><ul>';
-      data.skillGaps.missingSkills.forEach(skill => html += `<li>${skill}</li>`);
-      html += '</ul></div>';
-    }
-    
-    // Summary
-    if (data.summary) {
-      html += `<div class="result-section"><h4>📝 Executive Summary:</h4><p>${data.summary}</p></div>`;
-    }
   } else {
-    // ATS Score only
     const overallScore = data.overallScore || 0;
     html += `<div class="result-section success-card"><h4>🎯 ATS Score: <span class="score-badge">${overallScore}/100</span></h4></div>`;
     
@@ -584,139 +612,56 @@ function displayResumeResults(containerId, data, type = "ats") {
       data.strengths.forEach(str => html += `<li>${str}</li>`);
       html += '</ul></div>';
     }
-    
-    if (data.weaknesses && data.weaknesses.length > 0) {
-      html += '<div class="result-section error-card"><h4>⚠️ Weaknesses:</h4><ul>';
-      data.weaknesses.forEach(weak => html += `<li>${weak}</li>`);
-      html += '</ul></div>';
-    }
   }
   
-  // Full JSON (collapsible)
   html += `<details class="result-section"><summary>View Full JSON</summary><pre class="result-json">${JSON.stringify(data, null, 2)}</pre></details>`;
-  html += '<button onclick="copyResult()" class="copy-btn">📋 Copy Result</button>';
-  html += '</div>';
+  html += '<button onclick="copyResult()" class="copy-btn">📋 Copy Result</button></div>';
   
   container.innerHTML = html;
 }
 
 function displayBusinessResults(containerId, data) {
   const container = document.getElementById(containerId);
-  let html = '<div class="result-card"><h3>📊 Business Document Analysis</h3>';
+  let html = '<div class="result-card fade-in"><h3 class="result-header">📊 Business Document Analysis</h3>';
   
-  // Summary
   if (data.summary) {
     html += `<div class="result-section"><h4>📝 Summary:</h4><p>${data.summary}</p></div>`;
   }
   
-  // Document Type
-  if (data.documentType) {
-    html += `<div class="result-section"><h4>📄 Document Type:</h4><p>${data.documentType}</p></div>`;
-  }
-  
-  // Key Insights
-  if (data.insights && data.insights.keyInsights) {
-    html += '<div class="result-section suggestion-card"><h4>💡 Key Insights:</h4><ul>';
-    data.insights.keyInsights.forEach(insight => html += `<li>${insight}</li>`);
-    html += '</ul></div>';
-  }
-  
-  // Risks
   if (data.risks && data.risks.length > 0) {
     html += '<div class="result-section error-card"><h4>⚠️ Risks & Red Flags:</h4><ul>';
     data.risks.forEach(risk => html += `<li>${risk}</li>`);
     html += '</ul></div>';
   }
   
-  // Action Items
-  if (data.actionItems && data.actionItems.length > 0) {
-    html += '<div class="result-section suggestion-card"><h4>✅ Action Items:</h4><ul>';
-    data.actionItems.forEach(item => html += `<li>${item}</li>`);
-    html += '</ul></div>';
-  }
-  
-  // Tables
-  if (data.tables && data.tables.length > 0) {
-    html += '<div class="result-section"><h4>📋 Extracted Tables:</h4>';
-    data.tables.forEach((table, idx) => {
-      html += `<div style="margin-top: 1rem;"><strong>${table.tableName || `Table ${idx + 1}`}</strong>`;
-      if (table.totalAmount) {
-        html += ` - Total: ${table.currency || '$'}${table.totalAmount}`;
-      }
-      html += '</div>';
-    });
-    html += '</div>';
-  }
-  
-  // Full JSON (collapsible)
   html += `<details class="result-section"><summary>View Full JSON</summary><pre class="result-json">${JSON.stringify(data, null, 2)}</pre></details>`;
-  html += '<button onclick="copyResult()" class="copy-btn">📋 Copy Result</button>';
-  html += '</div>';
+  html += '<button onclick="copyResult()" class="copy-btn">📋 Copy Result</button></div>';
   
   container.innerHTML = html;
 }
 
 function displayWebsiteResults(containerId, data) {
   const container = document.getElementById(containerId);
-  let html = '<div class="result-card"><h3>🌐 Website Analysis Results</h3>';
+  let html = '<div class="result-card fade-in"><h3 class="result-header">🌐 Website Analysis Results</h3>';
   
-  // SEO Score
   const seoAnalysis = data.seoAnalysis || {};
   const seoScore = seoAnalysis.seoScore || 0;
   html += `<div class="result-section"><h4>SEO Score: <span class="score-badge">${seoScore}/100</span></h4></div>`;
   
-  // Title
-  if (data.websiteData && data.websiteData.title) {
-    html += `<div class="result-section"><h4>📄 Title:</h4><p>${data.websiteData.title}</p></div>`;
-  }
-  
-  // Meta Description
-  if (data.websiteData && data.websiteData.metaDescription) {
-    html += `<div class="result-section"><h4>📝 Meta Description:</h4><p>${data.websiteData.metaDescription}</p></div>`;
-  }
-  
-  // Structure
-  const structure = data.structure || {};
-  html += `<div class="result-section"><h4>📊 Page Structure:</h4><ul>`;
-  html += `<li>H1 Tags: ${structure.h1Count || 0}</li>`;
-  html += `<li>H2 Tags: ${structure.h2Count || 0}</li>`;
-  html += `<li>H3 Tags: ${structure.h3Count || 0}</li>`;
-  html += `<li>Links: ${structure.linkCount || 0}</li>`;
-  html += `<li>Images: ${structure.imageCount || 0}</li>`;
-  html += '</ul></div>';
-  
-  // Issues
   if (data.issues && data.issues.length > 0) {
     html += '<div class="result-section error-card"><h4>❌ Issues:</h4><ul>';
     data.issues.forEach(issue => html += `<li>${issue}</li>`);
     html += '</ul></div>';
   }
   
-  // Opportunities
-  if (data.opportunities && data.opportunities.length > 0) {
-    html += '<div class="result-section suggestion-card"><h4>💡 Opportunities:</h4><ul>';
-    data.opportunities.forEach(opp => html += `<li>${opp}</li>`);
-    html += '</ul></div>';
-  }
-  
-  // Recommendations
   if (data.recommendations && data.recommendations.length > 0) {
     html += '<div class="result-section suggestion-card"><h4>✅ Recommendations:</h4><ul>';
     data.recommendations.forEach(rec => html += `<li>${rec}</li>`);
     html += '</ul></div>';
   }
   
-  // Keywords
-  if (data.keywords && data.keywords.length > 0) {
-    html += '<div class="result-section"><h4>🔑 Keywords:</h4><ul>';
-    data.keywords.slice(0, 10).forEach(kw => html += `<li>${kw}</li>`);
-    html += '</ul></div>';
-  }
-  
-  // Full JSON (collapsible)
   html += `<details class="result-section"><summary>View Full JSON</summary><pre class="result-json">${JSON.stringify(data, null, 2)}</pre></details>`;
-  html += '<button onclick="copyResult()" class="copy-btn">📋 Copy Result</button>';
-  html += '</div>';
+  html += '<button onclick="copyResult()" class="copy-btn">📋 Copy Result</button></div>';
   
   container.innerHTML = html;
 }
@@ -746,4 +691,3 @@ async function exportData() {
 }
 </script>
 {% endblock %}
-
