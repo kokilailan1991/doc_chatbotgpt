@@ -1,7 +1,37 @@
 {% extends "base.html" %}
 
 {% block content %}
+<!-- Banner -->
+<div class="viral-banner">
+  <p>🔥 <strong>Free for now.</strong> Instant AI analysis. No login needed.</p>
+</div>
+
 <div class="workflow-container">
+  <!-- Sample Result Cards -->
+  <div class="sample-cards-section">
+    <h2>See What You Can Do</h2>
+    <div class="sample-cards-grid">
+      <div class="sample-card">
+        <h3>📄 Resume Analyzer</h3>
+        <p>ATS Score: 85/100</p>
+        <p>✅ Well-structured | ⚠️ Add more keywords</p>
+        <a href="/resume-analyzer" class="card-link">Try Now →</a>
+      </div>
+      <div class="sample-card">
+        <h3>📊 Business Docs</h3>
+        <p>Invoice Analysis Complete</p>
+        <p>✅ 12 line items extracted | 💰 Total: $5,240</p>
+        <a href="/business-docs-ai" class="card-link">Try Now →</a>
+      </div>
+      <div class="sample-card">
+        <h3>🚢 EDI Validator</h3>
+        <p>BAPLIE Validated</p>
+        <p>✅ Format: BAPLIE | 📦 45 containers</p>
+        <a href="/edi-validator" class="card-link">Try Now →</a>
+      </div>
+    </div>
+  </div>
+
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('resume')">Resume</button>
     <button class="tab-btn" onclick="switchTab('business')">Business Docs</button>
@@ -13,6 +43,8 @@
   <div id="resume-tab" class="tab-content active">
     <h2>📄 Resume Analyzer</h2>
     <p class="tab-description">Upload your resume to get ATS score, match with job descriptions, and get AI-powered improvements.</p>
+    
+    <button onclick="tryDemoResume()" class="demo-btn-large">✨ Try Example Resume</button>
     
     <div class="upload-section">
       <form id="resumeUploadForm" enctype="multipart/form-data">
@@ -35,6 +67,8 @@
       <button onclick="matchWithJD()" class="workflow-btn">Match with JD</button>
       <button onclick="getFullReport()" class="workflow-btn">Full Report</button>
       <button onclick="rewriteResume()" class="workflow-btn">Rewrite Resume</button>
+      <button onclick="shareResult()" class="workflow-btn share">Share Result</button>
+      <button onclick="copyResult()" class="workflow-btn copy">Copy Result</button>
     </div>
 
     <div id="resumeResults" class="results-section"></div>
@@ -44,6 +78,8 @@
   <div id="business-tab" class="tab-content">
     <h2>📊 Business Documents</h2>
     <p class="tab-description">Analyze contracts, invoices, and business documents with AI workflows.</p>
+    
+    <button onclick="tryDemoBusiness()" class="demo-btn-large">✨ Analyze Sample Invoice</button>
     
     <div class="upload-section">
       <form id="businessUploadForm" enctype="multipart/form-data">
@@ -61,6 +97,7 @@
       <button onclick="createSummary()" class="workflow-btn">Create Summary</button>
       <button onclick="riskAnalysis()" class="workflow-btn">Risk Analysis</button>
       <button onclick="generateEmail()" class="workflow-btn">Email Draft</button>
+      <button onclick="shareResult()" class="workflow-btn share">Share Result</button>
     </div>
 
     <div class="output-format-selector" style="margin-top: 15px;">
@@ -83,6 +120,8 @@
     <h2>🚢 Logistics EDI Analyzer</h2>
     <p class="tab-description">Validate and analyze EDI documents (BAPLIE, MOVINS, COPRAR).</p>
     
+    <button onclick="tryDemoEDI()" class="demo-btn-large">✨ Try Sample BAPLIE</button>
+    
     <div class="upload-section">
       <form id="ediUploadForm" enctype="multipart/form-data">
         <label>Upload EDI Document:</label>
@@ -100,6 +139,8 @@
     <h2>🌐 Website Analyzer</h2>
     <p class="tab-description">Analyze website content and extract insights.</p>
     
+    <button onclick="tryDemoWebsite()" class="demo-btn-large">✨ Analyze aigpt.co.in</button>
+    
     <form id="urlForm">
       <label>Enter Website URL:</label>
       <input type="url" id="urlInput" placeholder="https://example.com" />
@@ -111,6 +152,7 @@
     <div class="workflow-actions" id="websiteActions" style="display: none;">
       <button onclick="extractInsights()" class="workflow-btn">Extract Insights</button>
       <button onclick="createSummary()" class="workflow-btn">Create Summary</button>
+      <button onclick="shareResult()" class="workflow-btn share">Share Result</button>
     </div>
 
     <div id="websiteResults" class="results-section"></div>
@@ -292,6 +334,55 @@ document.getElementById("urlForm").addEventListener("submit", async (e) => {
   document.getElementById("websiteStatus").innerText = data.message || data.error;
   if (data.message) document.getElementById("websiteActions").style.display = "block";
 });
+
+// Demo Functions
+async function tryDemoResume() {
+  const res = await fetch("/api/demo/resume");
+  const data = await res.json();
+  displayResults("resumeResults", data.sampleData);
+}
+
+async function tryDemoBusiness() {
+  const res = await fetch("/api/demo/business");
+  const data = await res.json();
+  displayResults("businessResults", data.sampleData);
+}
+
+async function tryDemoEDI() {
+  const res = await fetch("/api/demo/edi");
+  const data = await res.json();
+  displayResults("ediResults", data.sampleData);
+}
+
+async function tryDemoWebsite() {
+  const url = "https://aigpt.co.in";
+  const res = await fetch("/api/website/analyze", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url })
+  });
+  const data = await res.json();
+  displayResults("websiteResults", data);
+}
+
+// Share Functions
+function shareResult() {
+  const shareUrl = window.location.href;
+  if (navigator.share) {
+    navigator.share({ title: "AI Document Analysis", url: shareUrl });
+  } else {
+    navigator.clipboard.writeText(shareUrl);
+    alert("Link copied to clipboard!");
+  }
+}
+
+function copyResult() {
+  const results = document.querySelectorAll('.results-section pre');
+  if (results.length > 0) {
+    navigator.clipboard.writeText(results[0].innerText);
+    alert("Results copied to clipboard!");
+  }
+}
 
 // Utility Functions
 function displayResults(containerId, data) {

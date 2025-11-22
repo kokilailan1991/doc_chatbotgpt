@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}AI Website Analyzer – SEO & Content Summary | AIGPT{% endblock %}
+{% block meta_description %}Paste any URL. Get instant SEO insights, structure breakdown, and recommendations. Analyze keywords, content hierarchy, and competitor opportunities.{% endblock %}
+{% block meta_keywords %}website analyzer, SEO analyzer, content analyzer, website SEO checker, SEO analysis tool{% endblock %}
+
+{% block og_title %}AI Website Analyzer – SEO & Content Summary | AIGPT{% endblock %}
+{% block og_description %}Paste any URL. Get instant SEO insights, structure breakdown, and recommendations.{% endblock %}
+
+{% block content %}
+<div class="seo-page-container">
+  <div class="seo-header">
+    <h1>AI Website Analyzer – SEO & Content Summary</h1>
+    <p class="seo-subtitle">Analyze any website instantly. Get SEO scores, content structure, keyword insights, and actionable recommendations.</p>
+  </div>
+
+  <!-- How It Works -->
+  <section class="seo-section">
+    <h2>How It Works</h2>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-number">1</div>
+        <h3>Enter URL</h3>
+        <p>Paste any website URL you want to analyze.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">2</div>
+        <h3>AI Analysis</h3>
+        <p>Our AI fetches and analyzes the website content, structure, and SEO elements.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">3</div>
+        <h3>Get Insights</h3>
+        <p>Receive SEO score, keyword analysis, content structure, and recommendations.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">4</div>
+        <h3>Take Action</h3>
+        <p>Use recommendations to improve your website's SEO and content.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="seo-section">
+    <h2>Analysis Features</h2>
+    <ul class="feature-list">
+      <li><strong>SEO Score:</strong> Comprehensive SEO score (0-100) with detailed breakdown</li>
+      <li><strong>Title Optimization:</strong> Analyze title tag effectiveness</li>
+      <li><strong>Meta Description:</strong> Evaluate meta description quality</li>
+      <li><strong>Heading Structure:</strong> Review H1/H2/H3 hierarchy</li>
+      <li><strong>Keyword Extraction:</strong> Identify important keywords and phrases</li>
+      <li><strong>Content Hierarchy:</strong> Analyze content structure and organization</li>
+      <li><strong>Issues Detection:</strong> Find SEO and content issues</li>
+      <li><strong>Opportunities:</strong> Identify improvement opportunities</li>
+      <li><strong>Competitor Keywords:</strong> Suggest competitor keyword opportunities</li>
+      <li><strong>Recommendations:</strong> Get actionable SEO recommendations</li>
+    </ul>
+  </section>
+
+  <!-- SEO Content -->
+  <section class="seo-section">
+    <h2>Why Use Our Website Analyzer?</h2>
+    <p>Our AI-powered Website Analyzer helps website owners, SEO professionals, and content marketers quickly assess website SEO health and content quality. Get instant insights without complex SEO tools.</p>
+    
+    <p><strong>Key Benefits:</strong></p>
+    <ul>
+      <li><strong>Instant Analysis:</strong> Get comprehensive SEO analysis in seconds</li>
+      <li><strong>No Installation:</strong> Works directly in your browser, no software needed</li>
+      <li><strong>Actionable Insights:</strong> Receive specific recommendations for improvement</li>
+      <li><strong>Keyword Discovery:</strong> Identify important keywords and competitor opportunities</li>
+      <li><strong>Structure Analysis:</strong> Evaluate content hierarchy and organization</li>
+      <li><strong>Free & Fast:</strong> No login required, instant results</li>
+    </ul>
+
+    <p>Perfect for SEO professionals, content marketers, website owners, and digital agencies who need quick website assessments and competitive analysis.</p>
+  </section>
+
+  <!-- Demo Section -->
+  <section class="seo-section">
+    <h2>Try Example Analysis</h2>
+    <button onclick="tryDemo()" class="demo-btn">Analyze aigpt.co.in</button>
+    <div id="demoResults" class="demo-results"></div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="seo-section">
+    <h2>Frequently Asked Questions</h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <h3>What does the SEO score mean?</h3>
+        <p>The SEO score (0-100) reflects overall SEO health based on title optimization, meta tags, heading structure, keyword density, and content quality.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Can I analyze any website?</h3>
+        <p>Yes, you can analyze any publicly accessible website by entering its URL.</p>
+      </div>
+      <div class="faq-item">
+        <h3>What keywords are extracted?</h3>
+        <p>Our AI extracts the most important keywords and phrases from the website content, ordered by importance.</p>
+      </div>
+      <div class="faq-item">
+        <h3>How accurate is the SEO analysis?</h3>
+        <p>Our AI uses advanced language models to provide accurate SEO analysis based on best practices and industry standards.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Do I need to create an account?</h3>
+        <p>No, our website analyzer is completely free and requires no login or account creation.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Can I export the results?</h3>
+        <p>Yes, analysis results can be exported as JSON for further processing or documentation.</p>
+      </div>
+      <div class="faq-item">
+        <h3>What information is analyzed?</h3>
+        <p>We analyze title tags, meta descriptions, headings (H1-H3), content structure, keywords, links, and overall SEO elements.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tool Interface -->
+  <section class="seo-section">
+    <h2>Start Analyzing Websites</h2>
+    <div class="tool-interface">
+      <form id="urlForm">
+        <label>Enter Website URL:</label>
+        <input type="url" id="urlInput" placeholder="https://example.com" />
+        <button type="submit">Analyze Website</button>
+      </form>
+
+      <div id="status" class="status-message"></div>
+      <div id="results" class="results-container"></div>
+    </div>
+  </section>
+</div>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "AI Website Analyzer",
+  "applicationCategory": "WebApplication",
+  "operatingSystem": "Web",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  }
+}
+</script>
+
+<script>
+async function tryDemo() {
+  const url = "https://aigpt.co.in";
+  const res = await fetch("/api/website/analyze", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url })
+  });
+  const data = await res.json();
+  document.getElementById("demoResults").innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+}
+
+document.getElementById("urlForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const url = document.getElementById("urlInput").value;
+  
+  document.getElementById("status").innerText = "Analyzing website...";
+  
+  const res = await fetch("/api/website/analyze", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url })
+  });
+  
+  const data = await res.json();
+  document.getElementById("status").innerText = data.error || "Analysis complete!";
+  displayResults(data);
+});
+
+function displayResults(data) {
+  const container = document.getElementById("results");
+  if (data.error) {
+    container.innerHTML = `<div class="error-card">${data.error}</div>`;
+    return;
+  }
+  
+  container.innerHTML = `
+    <div class="result-card">
+      <h3>SEO Analysis Results</h3>
+      <p><strong>SEO Score:</strong> ${data.seoAnalysis?.seoScore || 'N/A'}/100</p>
+      <p><strong>Title:</strong> ${data.websiteData?.title || 'N/A'}</p>
+      <p><strong>Keywords Found:</strong> ${data.keywords?.length || 0}</p>
+      <h4>Recommendations:</h4>
+      <ul>${(data.recommendations || []).map(r => `<li>${r}</li>`).join('')}</ul>
+      <pre>${JSON.stringify(data, null, 2)}</pre>
+    </div>
+  `;
+}
+</script>
+{% endblock %}
+

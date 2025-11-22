@@ -19,12 +19,16 @@ try:
     from resume_analyzer import ResumeAnalyzer
     from edi_analyzer import EDIAnalyzer
     from output_formats import OutputGenerator
+    from business_docs_analyzer import BusinessDocsAnalyzer
+    from website_analyzer import WebsiteAnalyzer
 except ImportError as e:
     print(f"Warning: Could not import workflow modules: {e}")
     WorkflowProcessor = None
     ResumeAnalyzer = None
     EDIAnalyzer = None
     OutputGenerator = None
+    BusinessDocsAnalyzer = None
+    WebsiteAnalyzer = None
 
 # Import other dependencies with error handling
 try:
@@ -319,10 +323,10 @@ def workflow_compare():
 
 @app.route("/resume-analyzer", methods=["GET"])
 def resume_analyzer_page():
-    return render_template("resume_analyzer.html",
-                         page_title="Resume Analyzer - ATS Score & JD Matching | AI Document Chatbot",
-                         meta_description="Analyze your resume with AI. Get ATS score, match with job descriptions, and get AI-powered resume improvements.",
-                         meta_keywords="resume analyzer, ATS score, resume checker, JD match, resume optimization")
+    return render_template("resume_analyzer_seo.html",
+                         page_title="AI Resume Analyzer – Free ATS Score & JD Match | AIGPT",
+                         meta_description="Analyze your resume with AI. Get ATS score, rewrite, JD match, and improvements instantly. Free resume checker with grammar fixes, skill gap analysis, and keyword optimization.",
+                         meta_keywords="resume analyzer, ATS score, resume checker, JD match, resume optimization, ATS resume checker, free resume analyzer, resume AI")
 
 @app.route("/api/resume/ats-score", methods=["POST"])
 def resume_ats_score():
@@ -402,7 +406,7 @@ def resume_rewrite():
 
 @app.route("/api/resume/full-report", methods=["POST"])
 def resume_full_report():
-    """Generate full resume analysis report"""
+    """Generate full resume analysis report with all enhancements"""
     try:
         data = request.get_json()
         jd_file_id = data.get("jd_file_id")
@@ -426,14 +430,101 @@ def resume_full_report():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/api/resume/grammar-analysis", methods=["POST"])
+def resume_grammar_analysis():
+    """Analyze grammar and clarity"""
+    try:
+        resume_retriever = retriever_cache.get("active")
+        if not resume_retriever:
+            return jsonify({"error": "Please upload a resume first"}), 400
+        
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if not openai_key:
+            return jsonify({"error": "OPENAI_API_KEY not configured"}), 500
+        
+        if ResumeAnalyzer:
+            analyzer = ResumeAnalyzer(openai_key)
+            analysis = analyzer.analyze_grammar_clarity(resume_retriever)
+            return jsonify(analysis)
+        else:
+            return jsonify({"error": "ResumeAnalyzer not available"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/resume/skill-gaps", methods=["POST"])
+def resume_skill_gaps():
+    """Analyze skill gaps"""
+    try:
+        data = request.get_json()
+        jd_file_id = data.get("jd_file_id")
+        
+        resume_retriever = retriever_cache.get("active")
+        jd_retriever = retriever_cache.get(jd_file_id)
+        
+        if not resume_retriever or not jd_retriever:
+            return jsonify({"error": "Please upload both resume and job description"}), 400
+        
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if not openai_key:
+            return jsonify({"error": "OPENAI_API_KEY not configured"}), 500
+        
+        if ResumeAnalyzer:
+            analyzer = ResumeAnalyzer(openai_key)
+            gaps = analyzer.analyze_skill_gaps(resume_retriever, jd_retriever)
+            return jsonify(gaps)
+        else:
+            return jsonify({"error": "ResumeAnalyzer not available"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/resume/keyword-optimization", methods=["POST"])
+def resume_keyword_optimization():
+    """Optimize keywords"""
+    try:
+        data = request.get_json()
+        jd_file_id = data.get("jd_file_id")
+        
+        resume_retriever = retriever_cache.get("active")
+        jd_retriever = retriever_cache.get(jd_file_id) if jd_file_id else None
+        
+        if not resume_retriever:
+            return jsonify({"error": "Please upload a resume first"}), 400
+        
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if not openai_key:
+            return jsonify({"error": "OPENAI_API_KEY not configured"}), 500
+        
+        if ResumeAnalyzer:
+            analyzer = ResumeAnalyzer(openai_key)
+            optimization = analyzer.optimize_keywords(resume_retriever, jd_retriever)
+            return jsonify(optimization)
+        else:
+            return jsonify({"error": "ResumeAnalyzer not available"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 # ==================== EDI ANALYZER ENDPOINTS ====================
 
 @app.route("/edi-validator", methods=["GET"])
 def edi_validator_page():
-    return render_template("edi_validator.html",
-                         page_title="EDI Validator - BAPLIE MOVINS COPRAR Analyzer | AI Document Chatbot",
-                         meta_description="Validate and analyze EDI documents including BAPLIE, MOVINS, COPRAR formats. Get structured JSON and table outputs.",
-                         meta_keywords="EDI validator, BAPLIE, MOVINS, COPRAR, EDI analyzer, logistics EDI")
+    return render_template("edi_validator_seo.html",
+                         page_title="EDI Validator – BAPLIE, MOVINS, COPRAR File Analyzer | AIGPT",
+                         meta_description="Validate BAPLIE, MOVINS, COPRAR container EDI files. Detect errors and summarize cargo instantly. Support for IFTMIN, CODECO, CUSCAR formats.",
+                         meta_keywords="EDI validator, BAPLIE, MOVINS, COPRAR, EDI analyzer, logistics EDI, container EDI, EDI validation")
+
+@app.route("/business-docs-ai", methods=["GET"])
+def business_docs_page():
+    return render_template("business_docs.html",
+                         page_title="AI Business Document Analyzer – Invoices & Contracts | AIGPT",
+                         meta_description="Upload invoices, contracts, salary slips, and reports. AI finds insights, risks, and action items.",
+                         meta_keywords="business document analyzer, invoice analyzer, contract analyzer, salary slip analyzer")
+
+@app.route("/website-analyzer", methods=["GET"])
+def website_analyzer_page():
+    return render_template("website_analyzer.html",
+                         page_title="AI Website Analyzer – SEO & Content Summary | AIGPT",
+                         meta_description="Paste any URL. Get instant SEO insights, structure breakdown, and recommendations.",
+                         meta_keywords="website analyzer, SEO analyzer, content analyzer, website SEO checker")
 
 @app.route("/api/edi/analyze", methods=["POST"])
 def edi_analyze():
@@ -576,6 +667,117 @@ def upload_multi():
         return jsonify({"message": "File uploaded successfully", "file_id": file_id})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+# ==================== BUSINESS DOCS ENDPOINTS ====================
+
+@app.route("/api/business-docs/analyze", methods=["POST"])
+def business_docs_analyze():
+    """Analyze business document"""
+    try:
+        retriever = retriever_cache.get("active")
+        if not retriever:
+            return jsonify({"error": "Please upload a document first"}), 400
+        
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if not openai_key:
+            return jsonify({"error": "OPENAI_API_KEY not configured"}), 500
+        
+        if BusinessDocsAnalyzer:
+            analyzer = BusinessDocsAnalyzer(openai_key)
+            analysis = analyzer.analyze_business_doc(retriever)
+            return jsonify(analysis)
+        else:
+            return jsonify({"error": "BusinessDocsAnalyzer not available"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ==================== WEBSITE ANALYZER ENDPOINTS ====================
+
+@app.route("/api/website/analyze", methods=["POST"])
+def website_analyze():
+    """Analyze website"""
+    try:
+        data = request.get_json()
+        url = data.get("url")
+        
+        if not url:
+            return jsonify({"error": "URL is required"}), 400
+        
+        # Fetch URL and create retriever
+        page = requests.get(url, timeout=10, headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        })
+        soup = BeautifulSoup(page.text, "html.parser")
+        text = soup.get_text()
+        
+        docs = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100).create_documents([text])
+        
+        openai_key = os.getenv("OPENAI_API_KEY")
+        embeddings = OpenAIEmbeddings(openai_api_key=openai_key)
+        vectordb = FAISS.from_documents(docs, embeddings)
+        retriever = vectordb.as_retriever()
+        
+        if WebsiteAnalyzer:
+            analyzer = WebsiteAnalyzer(openai_key)
+            analysis = analyzer.full_website_analysis(url, retriever)
+            return jsonify(analysis)
+        else:
+            return jsonify({"error": "WebsiteAnalyzer not available"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ==================== DEMO ENDPOINTS ====================
+
+@app.route("/api/demo/resume", methods=["GET"])
+def demo_resume():
+    """Return demo resume data"""
+    return jsonify({
+        "demo": True,
+        "message": "Demo resume analysis",
+        "sampleData": {
+            "atsScore": {"overallScore": 75},
+            "strengths": ["Well-structured format", "Clear work history"],
+            "weaknesses": ["Missing keywords", "Could improve bullet points"]
+        }
+    })
+
+@app.route("/api/demo/business", methods=["GET"])
+def demo_business():
+    """Return demo business doc data"""
+    return jsonify({
+        "demo": True,
+        "message": "Demo business document analysis",
+        "sampleData": {
+            "documentType": "Invoice",
+            "summary": "Sample invoice analysis",
+            "tables": [{"tableName": "Line Items", "rows": []}]
+        }
+    })
+
+@app.route("/api/demo/edi", methods=["GET"])
+def demo_edi():
+    """Return demo EDI data"""
+    return jsonify({
+        "demo": True,
+        "message": "Demo EDI analysis",
+        "sampleData": {
+            "formatType": "BAPLIE",
+            "validation": {"isValid": True, "errors": [], "warnings": []}
+        }
+    })
+
+@app.route("/api/demo/website", methods=["GET"])
+def demo_website():
+    """Return demo website analysis"""
+    return jsonify({
+        "demo": True,
+        "message": "Demo website analysis",
+        "sampleData": {
+            "seoScore": 80,
+            "keywords": ["AI", "document", "analyzer"],
+            "recommendations": ["Improve meta description", "Add more H2 tags"]
+        }
+    })
 
 @app.route("/styles.css", methods=["GET"])
 def serve_css():

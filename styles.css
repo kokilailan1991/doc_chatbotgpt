@@ -645,6 +645,243 @@ button:hover {
   margin: 2rem 0;
 }
 
+/* SEO Page Styles */
+.seo-page-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+}
+
+.seo-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.seo-header h1 {
+  font-size: 2.5rem;
+  background: linear-gradient(135deg, #6C5DD3, #3E98FF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 1rem;
+}
+
+.seo-subtitle {
+  font-size: 1.2rem;
+  color: #666;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.seo-section {
+  margin: 3rem 0;
+  padding: 2rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.seo-section:last-child {
+  border-bottom: none;
+}
+
+.seo-section h2 {
+  color: #6C5DD3;
+  margin-bottom: 1.5rem;
+  font-size: 2rem;
+}
+
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.step-card {
+  text-align: center;
+  padding: 1.5rem;
+  background: #f8f9ff;
+  border-radius: 12px;
+}
+
+.step-number {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #6C5DD3, #3E98FF);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0 auto 1rem;
+}
+
+.feature-list {
+  list-style: none;
+  padding: 0;
+}
+
+.feature-list li {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f0f0f0;
+  color: #555;
+}
+
+.doc-types-grid,
+.edi-formats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.doc-type-card,
+.format-card {
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8f9ff, #f0f4ff);
+  border-radius: 12px;
+  border-left: 4px solid #6C5DD3;
+}
+
+.doc-type-card h3,
+.format-card h3 {
+  color: #6C5DD3;
+  margin-bottom: 0.5rem;
+}
+
+.faq-list {
+  margin-top: 2rem;
+}
+
+.faq-item {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.faq-item:last-child {
+  border-bottom: none;
+}
+
+.faq-item h3 {
+  color: #6C5DD3;
+  margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+}
+
+.faq-item p {
+  color: #666;
+  line-height: 1.8;
+}
+
+/* Viral Banner */
+.viral-banner {
+  background: linear-gradient(135deg, #6C5DD3, #3E98FF);
+  color: white;
+  text-align: center;
+  padding: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 2rem;
+  border-radius: 8px;
+}
+
+/* Sample Cards */
+.sample-cards-section {
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+.sample-cards-section h2 {
+  color: #6C5DD3;
+  margin-bottom: 2rem;
+}
+
+.sample-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.sample-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s;
+}
+
+.sample-card:hover {
+  transform: translateY(-5px);
+}
+
+.sample-card h3 {
+  color: #6C5DD3;
+  margin-bottom: 1rem;
+}
+
+.card-link {
+  display: inline-block;
+  margin-top: 1rem;
+  color: #3E98FF;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.card-link:hover {
+  text-decoration: underline;
+}
+
+.demo-btn-large {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(135deg, #6C5DD3, #3E98FF);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 2rem;
+  transition: transform 0.2s;
+}
+
+.demo-btn-large:hover {
+  transform: translateY(-2px);
+}
+
+.demo-btn {
+  padding: 10px 20px;
+  background: #6C5DD3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.demo-results {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f8f9ff;
+  border-radius: 8px;
+}
+
+.error-card {
+  background: #fee;
+  color: #c33;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #c33;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .nav-container {
@@ -698,6 +935,17 @@ button:hover {
 
   .workflow-btn {
     width: 100%;
+  }
+
+  .seo-header h1 {
+    font-size: 2rem;
+  }
+
+  .steps-grid,
+  .sample-cards-grid,
+  .doc-types-grid,
+  .edi-formats-grid {
+    grid-template-columns: 1fr;
   }
 }
 

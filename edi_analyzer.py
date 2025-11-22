@@ -16,7 +16,7 @@ class EDIAnalyzer:
         self.output_parser = StrOutputParser()
     
     def detect_edi_format(self, content: str) -> str:
-        """Detect EDI format type"""
+        """Detect EDI format type - Enhanced with more formats"""
         content_upper = content.upper()
         
         if 'BAPLIE' in content_upper or 'BGM+945' in content_upper:
@@ -25,6 +25,12 @@ class EDIAnalyzer:
             return "MOVINS"
         elif 'COPRAR' in content_upper or 'BGM+920' in content_upper:
             return "COPRAR"
+        elif 'IFTMIN' in content_upper or 'BGM+380' in content_upper:
+            return "IFTMIN"
+        elif 'CODECO' in content_upper or 'BGM+950' in content_upper:
+            return "CODECO"
+        elif 'CUSCAR' in content_upper or 'BGM+951' in content_upper:
+            return "CUSCAR"
         elif 'UNB' in content_upper and 'UNH' in content_upper:
             return "EDIFACT"
         elif 'ISA' in content_upper and 'GS' in content_upper:
@@ -44,6 +50,8 @@ class EDIAnalyzer:
                 warnings.append("Missing TDT segment (Transport Details)")
             if 'LOC+' not in content.upper():
                 warnings.append("Missing LOC segment (Location)")
+            if 'EQD+' not in content.upper():
+                warnings.append("Missing EQD segment (Equipment Details)")
         
         elif format_type == "MOVINS":
             if 'BGM+910' not in content.upper():
@@ -54,6 +62,24 @@ class EDIAnalyzer:
         elif format_type == "COPRAR":
             if 'BGM+920' not in content.upper():
                 errors.append("Missing BGM segment (Message Header)")
+        
+        elif format_type == "IFTMIN":
+            if 'BGM+380' not in content.upper():
+                errors.append("Missing BGM segment (Message Header)")
+            if 'TDT+' not in content.upper():
+                warnings.append("Missing TDT segment (Transport Details)")
+        
+        elif format_type == "CODECO":
+            if 'BGM+950' not in content.upper():
+                errors.append("Missing BGM segment (Message Header)")
+            if 'CNT+' not in content.upper():
+                warnings.append("Missing CNT segment (Container Count)")
+        
+        elif format_type == "CUSCAR":
+            if 'BGM+951' not in content.upper():
+                errors.append("Missing BGM segment (Message Header)")
+            if 'CUS+' not in content.upper():
+                warnings.append("Missing CUS segment (Customs Information)")
         
         # Check for basic EDI structure
         if format_type in ["EDIFACT", "BAPLIE", "MOVINS", "COPRAR"]:

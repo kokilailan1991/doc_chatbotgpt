@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}AI Business Document Analyzer – Invoices & Contracts | AIGPT{% endblock %}
+{% block meta_description %}Upload invoices, contracts, salary slips, and reports. AI finds insights, risks, and action items. Extract tables, analyze negotiations, and export to Excel.{% endblock %}
+{% block meta_keywords %}business document analyzer, invoice analyzer, contract analyzer, salary slip analyzer, document AI, invoice reader{% endblock %}
+
+{% block og_title %}AI Business Document Analyzer – Invoices & Contracts | AIGPT{% endblock %}
+{% block og_description %}Upload invoices, contracts, salary slips, and reports. AI finds insights, risks, and action items.{% endblock %}
+
+{% block content %}
+<div class="seo-page-container">
+  <div class="seo-header">
+    <h1>AI Business Document Analyzer</h1>
+    <p class="seo-subtitle">Analyze invoices, contracts, proposals, salary slips, and reports with AI. Extract insights, detect risks, and get actionable recommendations.</p>
+  </div>
+
+  <!-- How It Works -->
+  <section class="seo-section">
+    <h2>How It Works</h2>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-number">1</div>
+        <h3>Upload Document</h3>
+        <p>Upload your invoice, contract, proposal, salary slip, or report.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">2</div>
+        <h3>AI Analysis</h3>
+        <p>Our AI extracts key information, tables, and identifies risks.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">3</div>
+        <h3>Get Insights</h3>
+        <p>Receive summary, action items, negotiation points, and recommendations.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">4</div>
+        <h3>Export Results</h3>
+        <p>Export as JSON, Excel, or PDF for further processing.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Supported Documents -->
+  <section class="seo-section">
+    <h2>Supported Document Types</h2>
+    <div class="doc-types-grid">
+      <div class="doc-type-card">
+        <h3>📄 Invoices</h3>
+        <p>Extract line items, amounts, dates, and vendor information. Detect discrepancies and missing information.</p>
+      </div>
+      <div class="doc-type-card">
+        <h3>📋 Contracts</h3>
+        <p>Analyze key terms, identify negotiation points, highlight red flags, and extract favorable terms.</p>
+      </div>
+      <div class="doc-type-card">
+        <h3>💼 Proposals</h3>
+        <p>Summarize proposals, extract pricing, identify key deliverables, and analyze competitiveness.</p>
+      </div>
+      <div class="doc-type-card">
+        <h3>💰 Salary Slips</h3>
+        <p>Extract salary components, deductions, taxes, and verify calculations.</p>
+      </div>
+      <div class="doc-type-card">
+        <h3>📊 Reports</h3>
+        <p>Analyze business reports, extract key metrics, identify trends, and generate summaries.</p>
+      </div>
+      <div class="doc-type-card">
+        <h3>📑 Office PDFs</h3>
+        <p>Process any business PDF document with AI-powered analysis.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SEO Content -->
+  <section class="seo-section">
+    <h2>Why Use Our Business Document Analyzer?</h2>
+    <p>Our AI-powered Business Document Analyzer helps professionals quickly extract insights from complex business documents. Whether you're reviewing invoices, analyzing contracts, or processing reports, our tool saves hours of manual work.</p>
+    
+    <p><strong>Key Benefits:</strong></p>
+    <ul>
+      <li><strong>Time Savings:</strong> Process documents in seconds instead of hours</li>
+      <li><strong>Accuracy:</strong> AI-powered extraction reduces human error</li>
+      <li><strong>Risk Detection:</strong> Automatically identify red flags and potential issues</li>
+      <li><strong>Table Extraction:</strong> Extract structured data from documents into Excel/CSV</li>
+      <li><strong>Action Items:</strong> Get prioritized action items from any document</li>
+      <li><strong>Negotiation Points:</strong> For contracts, identify key negotiation opportunities</li>
+    </ul>
+
+    <p>Perfect for accountants, lawyers, procurement teams, and business analysts who need to process large volumes of documents efficiently.</p>
+  </section>
+
+  <!-- Demo Section -->
+  <section class="seo-section">
+    <h2>Try Example Document</h2>
+    <button onclick="tryDemo()" class="demo-btn">Analyze Sample Invoice</button>
+    <div id="demoResults" class="demo-results"></div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="seo-section">
+    <h2>Frequently Asked Questions</h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <h3>What document types are supported?</h3>
+        <p>We support invoices, contracts, proposals, salary slips, reports, and general office PDFs.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Can I extract tables from documents?</h3>
+        <p>Yes, our AI automatically extracts tables and line items, which can be exported to Excel/CSV format.</p>
+      </div>
+      <div class="faq-item">
+        <h3>How does risk detection work?</h3>
+        <p>Our AI analyzes documents for red flags, missing information, discrepancies, and potential issues based on document type.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Can I export results?</h3>
+        <p>Yes, you can export results as JSON, Excel/CSV, PDF, or email drafts.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Is my document data secure?</h3>
+        <p>Yes, documents are processed securely and not stored permanently. All analysis is done in real-time.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Do I need to create an account?</h3>
+        <p>No, our tool is completely free and requires no login or account creation.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Can I analyze multiple documents?</h3>
+        <p>Yes, you can upload and compare multiple documents to identify discrepancies or changes.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tool Interface -->
+  <section class="seo-section">
+    <h2>Start Analyzing Your Documents</h2>
+    <div class="tool-interface">
+      <form id="uploadForm" enctype="multipart/form-data">
+        <label>Upload Business Document:</label>
+        <input type="file" id="docFile" accept=".pdf" />
+        <button type="submit">Upload & Analyze</button>
+      </form>
+
+      <div id="status" class="status-message"></div>
+      
+      <div class="workflow-actions" id="actions" style="display: none;">
+        <button onclick="extractInsights()" class="workflow-btn">Extract Insights</button>
+        <button onclick="getActionItems()" class="workflow-btn">Action Items</button>
+        <button onclick="getSummary()" class="workflow-btn">Summary</button>
+        <button onclick="riskAnalysis()" class="workflow-btn">Risk Analysis</button>
+      </div>
+
+      <div id="results" class="results-container"></div>
+    </div>
+  </section>
+</div>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "AI Business Document Analyzer",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  }
+}
+</script>
+
+<script>
+async function tryDemo() {
+  const res = await fetch("/api/demo/business");
+  const data = await res.json();
+  document.getElementById("demoResults").innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+}
+
+document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const formData = new FormData();
+  formData.append("file", document.getElementById("docFile").files[0]);
+  
+  const res = await fetch("/upload", { method: "POST", body: formData });
+  const data = await res.json();
+  document.getElementById("status").innerText = data.message || data.error;
+  
+  if (data.message) {
+    document.getElementById("actions").style.display = "block";
+    const analysisRes = await fetch("/api/business-docs/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    });
+    const analysisData = await analysisRes.json();
+    displayResults(analysisData);
+  }
+});
+
+async function extractInsights() {
+  const res = await fetch("/api/workflow/extract-insights", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ document_type: "business" })
+  });
+  const data = await res.json();
+  displayResults(data);
+}
+
+async function getActionItems() {
+  const res = await fetch("/api/workflow/action-items", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({})
+  });
+  const data = await res.json();
+  displayResults(data);
+}
+
+async function getSummary() {
+  const res = await fetch("/api/workflow/summary", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type: "executive" })
+  });
+  const data = await res.json();
+  displayResults(data);
+}
+
+async function riskAnalysis() {
+  const res = await fetch("/api/workflow/risk-analysis", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({})
+  });
+  const data = await res.json();
+  displayResults(data);
+}
+
+function displayResults(data) {
+  const container = document.getElementById("results");
+  container.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+}
+</script>
+{% endblock %}
+

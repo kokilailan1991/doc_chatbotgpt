@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}EDI Validator – BAPLIE, MOVINS, COPRAR File Analyzer | AIGPT{% endblock %}
+{% block meta_description %}Validate BAPLIE, MOVINS, COPRAR container EDI files. Detect errors and summarize cargo instantly. Support for IFTMIN, CODECO, CUSCAR formats.{% endblock %}
+{% block meta_keywords %}EDI validator, BAPLIE, MOVINS, COPRAR, EDI analyzer, logistics EDI, container EDI, EDI validation{% endblock %}
+
+{% block og_title %}EDI Validator – BAPLIE, MOVINS, COPRAR File Analyzer | AIGPT{% endblock %}
+{% block og_description %}Validate BAPLIE, MOVINS, COPRAR container EDI files. Detect errors and summarize cargo instantly.{% endblock %}
+
+{% block content %}
+<div class="seo-page-container">
+  <div class="seo-header">
+    <h1>EDI Validator – BAPLIE, MOVINS, COPRAR File Analyzer</h1>
+    <p class="seo-subtitle">Validate and analyze EDI container documents. Detect errors, missing fields, and get structured JSON outputs for automation.</p>
+  </div>
+
+  <!-- Supported Formats -->
+  <section class="seo-section">
+    <h2>Supported EDI Formats</h2>
+    <div class="edi-formats-grid">
+      <div class="format-card">
+        <h3>BAPLIE</h3>
+        <p>Bayplan/stowage plan messages for container vessel planning</p>
+      </div>
+      <div class="format-card">
+        <h3>MOVINS</h3>
+        <p>Container movement instructions for port operations</p>
+      </div>
+      <div class="format-card">
+        <h3>COPRAR</h3>
+        <p>Container discharge/loading report messages</p>
+      </div>
+      <div class="format-card">
+        <h3>IFTMIN</h3>
+        <p>International Forwarding and Transport Message</p>
+      </div>
+      <div class="format-card">
+        <h3>CODECO</h3>
+        <p>Container gate in/out report</p>
+      </div>
+      <div class="format-card">
+        <h3>CUSCAR</h3>
+        <p>Customs cargo report messages</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="seo-section">
+    <h2>How It Works</h2>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-number">1</div>
+        <h3>Upload EDI File</h3>
+        <p>Upload your BAPLIE, MOVINS, COPRAR, or other EDI format file.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">2</div>
+        <h3>Auto-Detect Format</h3>
+        <p>Our system automatically detects the EDI format type.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">3</div>
+        <h3>Validate Structure</h3>
+        <p>Validates segments, checks for missing fields, and detects errors.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">4</div>
+        <h3>Get Results</h3>
+        <p>Receive validation results, container summary, and suggested fixes.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SEO Content -->
+  <section class="seo-section">
+    <h2>Why Use Our EDI Validator?</h2>
+    <p>EDI (Electronic Data Interchange) files are critical for logistics and shipping operations. Our EDI Validator helps logistics professionals, port operators, and shipping companies validate container EDI messages quickly and accurately.</p>
+    
+    <p><strong>Key Features:</strong></p>
+    <ul>
+      <li><strong>Format Detection:</strong> Automatically identifies BAPLIE, MOVINS, COPRAR, IFTMIN, CODECO, CUSCAR formats</li>
+      <li><strong>Structure Validation:</strong> Validates EDI segment structure and required fields</li>
+      <li><strong>Error Detection:</strong> Identifies missing segments, incorrect codes, and data inconsistencies</li>
+      <li><strong>Container Summary:</strong> Extracts container information, locations, and cargo details</li>
+      <li><strong>Weight/Slot Validation:</strong> Detects mismatches in container weights and slot assignments</li>
+      <li><strong>JSON Export:</strong> Structured JSON output for automation and integration</li>
+      <li><strong>Table Output:</strong> Human-readable table format for quick review</li>
+    </ul>
+
+    <p>Perfect for logistics teams, port operators, shipping companies, and EDI integration developers who need to validate and process container EDI messages efficiently.</p>
+  </section>
+
+  <!-- Demo Section -->
+  <section class="seo-section">
+    <h2>Try Sample EDI File</h2>
+    <button onclick="tryDemo()" class="demo-btn">Try Sample BAPLIE</button>
+    <div id="demoResults" class="demo-results"></div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="seo-section">
+    <h2>Frequently Asked Questions</h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <h3>What EDI formats are supported?</h3>
+        <p>We support BAPLIE, MOVINS, COPRAR, IFTMIN, CODECO, CUSCAR, EDIFACT, and X12 formats.</p>
+      </div>
+      <div class="faq-item">
+        <h3>How does validation work?</h3>
+        <p>Our validator checks for required segments, validates field formats, detects missing data, and identifies structural errors.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Can I export validation results?</h3>
+        <p>Yes, results can be exported as JSON for automation or as tables for human review.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Does it detect weight/slot mismatches?</h3>
+        <p>Yes, our validator checks for inconsistencies in container weights, slot assignments, and location codes.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Is it free to use?</h3>
+        <p>Yes, our EDI validator is completely free with no login required.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Can I integrate this via API?</h3>
+        <p>Yes, all functionality is available via REST API endpoints for automation.</p>
+      </div>
+      <div class="faq-item">
+        <h3>What file formats are accepted?</h3>
+        <p>We accept PDF, TXT, and native EDI file formats.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tool Interface -->
+  <section class="seo-section">
+    <h2>Start Validating Your EDI Files</h2>
+    <div class="tool-interface">
+      <form id="ediUploadForm" enctype="multipart/form-data">
+        <label>Upload EDI Document:</label>
+        <input type="file" id="ediFile" accept=".pdf,.txt,.edi" />
+        <button type="submit">Upload & Validate</button>
+      </form>
+
+      <div id="status" class="status-message"></div>
+      <div id="results" class="results-container"></div>
+    </div>
+  </section>
+</div>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "EDI Validator",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  }
+}
+</script>
+
+<script>
+async function tryDemo() {
+  const res = await fetch("/api/demo/edi");
+  const data = await res.json();
+  document.getElementById("demoResults").innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+}
+
+document.getElementById("ediUploadForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const formData = new FormData();
+  formData.append("file", document.getElementById("ediFile").files[0]);
+  
+  const res = await fetch("/upload", { method: "POST", body: formData });
+  const data = await res.json();
+  document.getElementById("status").innerText = data.message || data.error;
+  
+  if (data.message) {
+    const analysisRes = await fetch("/api/edi/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    });
+    const analysisData = await analysisRes.json();
+    displayResults(analysisData);
+  }
+});
+
+function displayResults(data) {
+  const container = document.getElementById("results");
+  container.innerHTML = `
+    <div class="result-card">
+      <h3>Validation Results</h3>
+      <p><strong>Format:</strong> ${data.formatType || 'Unknown'}</p>
+      <p><strong>Valid:</strong> ${data.validation?.isValid ? 'Yes' : 'No'}</p>
+      <p><strong>Errors:</strong> ${data.validation?.errors?.length || 0}</p>
+      <p><strong>Warnings:</strong> ${data.validation?.warnings?.length || 0}</p>
+      <pre>${JSON.stringify(data, null, 2)}</pre>
+    </div>
+  `;
+}
+</script>
+{% endblock %}
+
