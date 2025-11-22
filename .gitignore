@@ -192,3 +192,15 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# Node.js files (this is a Python/Flask app - these shouldn't be here)
+package.json
+package-lock.json
+yarn.lock
+next.config.js
+tailwind.config.ts
+tsconfig.json
+node_modules/
+app/
+lib/
+prisma/

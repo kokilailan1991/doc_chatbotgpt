@@ -26,3 +26,15 @@ get-pip.py
 *.ps1
 INSTALL.md
 
+# Node.js files (this is a Python/Flask app)
+package.json
+package-lock.json
+yarn.lock
+next.config.js
+tailwind.config.ts
+tsconfig.json
+node_modules/
+app/
+lib/
+prisma/
+
