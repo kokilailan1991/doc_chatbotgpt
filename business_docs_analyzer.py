@@ -151,3 +151,4 @@ Return ONLY valid JSON, no additional text.
             "keyTerms": negotiation_points.get("keyTerms", []) if negotiation_points else []
         }
 
+

@@ -125,7 +125,7 @@
     <div class="upload-section">
       <form id="ediUploadForm" enctype="multipart/form-data">
         <label>Upload EDI Document:</label>
-        <input type="file" id="ediFile" accept=".pdf,.txt,.edi" />
+        <input type="file" id="ediFile" accept=".edi,.txt,.baplie,.movins,.coprar" />
         <button type="submit">Upload & Analyze</button>
       </form>
     </div>
@@ -199,13 +199,19 @@ document.getElementById("jdUploadForm").addEventListener("submit", async (e) => 
 });
 
 async function getATSScore() {
-  const res = await fetch("/api/resume/ats-score", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({})
-  });
-  const data = await res.json();
-  displayResults("resumeResults", data);
+  document.getElementById("resumeResults").innerHTML = '<div class="loading">⏳ Calculating ATS Score...</div>';
+  try {
+    const res = await fetch("/api/resume/ats-score", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    });
+    const data = await res.json();
+    displayResumeResults("resumeResults", data, "ats");
+    document.getElementById("resumeResults").scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (error) {
+    document.getElementById("resumeResults").innerHTML = `<div class="error-message">❌ Error: ${error.message}</div>`;
+  }
 }
 
 async function matchWithJD() {
@@ -219,13 +225,19 @@ async function matchWithJD() {
 }
 
 async function getFullReport() {
-  const res = await fetch("/api/resume/full-report", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ jd_file_id: "jd" })
-  });
-  const data = await res.json();
-  displayResults("resumeResults", data);
+  document.getElementById("resumeResults").innerHTML = '<div class="loading">⏳ Generating full report...</div>';
+  try {
+    const res = await fetch("/api/resume/full-report", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jd_file_id: "jd" })
+    });
+    const data = await res.json();
+    displayResumeResults("resumeResults", data, "full");
+    document.getElementById("resumeResults").scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (error) {
+    document.getElementById("resumeResults").innerHTML = `<div class="error-message">❌ Error: ${error.message}</div>`;
+  }
 }
 
 async function rewriteResume() {
@@ -251,13 +263,19 @@ document.getElementById("businessUploadForm").addEventListener("submit", async (
 });
 
 async function extractInsights() {
-  const res = await fetch("/api/workflow/extract-insights", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ document_type: "business" })
-  });
-  const data = await res.json();
-  displayResults("businessResults", data);
+  document.getElementById("businessResults").innerHTML = '<div class="loading">⏳ Extracting insights...</div>';
+  try {
+    const res = await fetch("/api/workflow/extract-insights", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ document_type: "business" })
+    });
+    const data = await res.json();
+    displayBusinessResults("businessResults", data);
+    document.getElementById("businessResults").scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (error) {
+    document.getElementById("businessResults").innerHTML = `<div class="error-message">❌ Error: ${error.message}</div>`;
+  }
 }
 
 async function generateActionItems() {
@@ -303,21 +321,36 @@ async function generateEmail() {
 // EDI Functions
 document.getElementById("ediUploadForm").addEventListener("submit", async (e) => {
   e.preventDefault();
+  const file = document.getElementById("ediFile").files[0];
+  if (!file) {
+    document.getElementById("ediStatus").innerText = "Please select a file";
+    return;
+  }
+  
   const formData = new FormData();
-  formData.append("file", document.getElementById("ediFile").files[0]);
+  formData.append("file", file);
   
-  const res = await fetch("/upload", { method: "POST", body: formData });
-  const data = await res.json();
-  document.getElementById("ediStatus").innerText = data.message || data.error;
+  document.getElementById("ediStatus").innerHTML = '<div class="loading">⏳ Analyzing EDI file...</div>';
+  document.getElementById("ediResults").innerHTML = "";
   
-  if (data.message) {
-    const analysisRes = await fetch("/api/edi/analyze", {
+  try {
+    // Use new analyze-edi endpoint directly with file
+    const res = await fetch("/api/analyze-edi", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({})
+      body: formData
     });
-    const analysisData = await analysisRes.json();
-    displayResults("ediResults", analysisData);
+    const data = await res.json();
+    
+    if (data.error) {
+      document.getElementById("ediStatus").innerHTML = `<div class="error-message">❌ ${data.error}</div>`;
+    } else {
+      document.getElementById("ediStatus").innerHTML = '<div class="success-message">✅ EDI file analyzed successfully!</div>';
+      displayEDIResults("ediResults", data);
+      // Auto-scroll to results
+      document.getElementById("ediResults").scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  } catch (error) {
+    document.getElementById("ediStatus").innerHTML = `<div class="error-message">❌ Error: ${error.message}</div>`;
   }
 });
 
@@ -325,21 +358,47 @@ document.getElementById("ediUploadForm").addEventListener("submit", async (e) =>
 document.getElementById("urlForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const url = document.getElementById("urlInput").value;
-  const res = await fetch("/fetch-url", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url })
-  });
-  const data = await res.json();
-  document.getElementById("websiteStatus").innerText = data.message || data.error;
-  if (data.message) document.getElementById("websiteActions").style.display = "block";
+  if (!url) {
+    document.getElementById("websiteStatus").innerHTML = '<div class="error-message">Please enter a URL</div>';
+    return;
+  }
+  
+  document.getElementById("websiteStatus").innerHTML = '<div class="loading">⏳ Analyzing website...</div>';
+  document.getElementById("websiteResults").innerHTML = "";
+  
+  try {
+    const res = await fetch("/api/analyze-website", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url })
+    });
+    const data = await res.json();
+    
+    if (data.error) {
+      document.getElementById("websiteStatus").innerHTML = `<div class="error-message">❌ ${data.error}</div>`;
+    } else {
+      document.getElementById("websiteStatus").innerHTML = '<div class="success-message">✅ Website analyzed successfully!</div>';
+      document.getElementById("websiteActions").style.display = "block";
+      displayWebsiteResults("websiteResults", data);
+      // Auto-scroll to results
+      document.getElementById("websiteResults").scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  } catch (error) {
+    document.getElementById("websiteStatus").innerHTML = `<div class="error-message">❌ Error: ${error.message}</div>`;
+  }
 });
 
 // Demo Functions
 async function tryDemoResume() {
-  const res = await fetch("/api/demo/resume");
-  const data = await res.json();
-  displayResults("resumeResults", data.sampleData);
+  document.getElementById("resumeResults").innerHTML = '<div class="loading">⏳ Loading demo resume analysis...</div>';
+  try {
+    const res = await fetch("/api/demo/resume");
+    const data = await res.json();
+    displayResumeResults("resumeResults", data, "ats");
+    document.getElementById("resumeResults").scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (error) {
+    document.getElementById("resumeResults").innerHTML = `<div class="error-message">❌ Error: ${error.message}</div>`;
+  }
 }
 
 async function tryDemoBusiness() {
@@ -349,20 +408,42 @@ async function tryDemoBusiness() {
 }
 
 async function tryDemoEDI() {
-  const res = await fetch("/api/demo/edi");
-  const data = await res.json();
-  displayResults("ediResults", data.sampleData);
+  document.getElementById("ediStatus").innerHTML = '<div class="loading">⏳ Loading demo EDI analysis...</div>';
+  document.getElementById("ediResults").innerHTML = "";
+  try {
+    const res = await fetch("/api/demo/edi");
+    const data = await res.json();
+    displayEDIResults("ediResults", data);
+    document.getElementById("ediStatus").innerHTML = '<div class="success-message">✅ Demo EDI analysis loaded!</div>';
+    document.getElementById("ediResults").scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (error) {
+    document.getElementById("ediStatus").innerHTML = `<div class="error-message">❌ Error: ${error.message}</div>`;
+  }
 }
 
 async function tryDemoWebsite() {
   const url = "https://aigpt.co.in";
-  const res = await fetch("/api/website/analyze", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url })
-  });
-  const data = await res.json();
-  displayResults("websiteResults", data);
+  document.getElementById("websiteStatus").innerHTML = '<div class="loading">⏳ Analyzing demo website...</div>';
+  document.getElementById("websiteResults").innerHTML = "";
+  
+  try {
+    const res = await fetch("/api/analyze-website", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url })
+    });
+    const data = await res.json();
+    
+    if (data.error) {
+      document.getElementById("websiteStatus").innerHTML = `<div class="error-message">❌ ${data.error}</div>`;
+    } else {
+      document.getElementById("websiteStatus").innerHTML = '<div class="success-message">✅ Demo analysis complete!</div>';
+      document.getElementById("websiteActions").style.display = "block";
+      displayWebsiteResults("websiteResults", data);
+    }
+  } catch (error) {
+    document.getElementById("websiteStatus").innerHTML = `<div class="error-message">❌ Error: ${error.message}</div>`;
+  }
 }
 
 // Share Functions
@@ -387,7 +468,257 @@ function copyResult() {
 // Utility Functions
 function displayResults(containerId, data) {
   const container = document.getElementById(containerId);
-  container.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+  container.innerHTML = `<div class="result-card"><h3>Your Results</h3><pre class="result-json">${JSON.stringify(data, null, 2)}</pre><button onclick="copyResult()" class="copy-btn">📋 Copy Result</button></div>`;
+}
+
+function displayEDIResults(containerId, data) {
+  const container = document.getElementById(containerId);
+  let html = '<div class="result-card"><h3>📊 EDI Analysis Results</h3>';
+  
+  // Format Type
+  html += `<div class="result-section"><h4>Format: ${data.formatType || 'Unknown'}</h4></div>`;
+  
+  // Validation Status
+  const validation = data.validation || {};
+  if (validation.isValid) {
+    html += '<div class="result-section success-card"><h4>✅ Validation: PASSED</h4></div>';
+  } else {
+    html += '<div class="result-section error-card"><h4>❌ Validation: FAILED</h4></div>';
+  }
+  
+  // Errors
+  if (validation.errors && validation.errors.length > 0) {
+    html += '<div class="result-section error-card"><h4>❌ Errors:</h4><ul>';
+    validation.errors.forEach(err => html += `<li>${err}</li>`);
+    html += '</ul></div>';
+  }
+  
+  // Warnings
+  if (validation.warnings && validation.warnings.length > 0) {
+    html += '<div class="result-section warning-card"><h4>⚠️ Warnings:</h4><ul>';
+    validation.warnings.forEach(warn => html += `<li>${warn}</li>`);
+    html += '</ul></div>';
+  }
+  
+  // Summary
+  if (data.summary) {
+    html += `<div class="result-section"><h4>📝 Summary:</h4><p>${data.summary}</p></div>`;
+  }
+  
+  // Containers
+  if (validation.containersFound > 0) {
+    html += `<div class="result-section"><h4>📦 Containers Found: ${validation.containersFound}</h4>`;
+    if (validation.containerNumbers && validation.containerNumbers.length > 0) {
+      html += '<ul>';
+      validation.containerNumbers.forEach(cont => html += `<li>${cont}</li>`);
+      html += '</ul>';
+    }
+    html += '</div>';
+  }
+  
+  // Suggestions
+  if (validation.suggestions && validation.suggestions.length > 0) {
+    html += '<div class="result-section suggestion-card"><h4>💡 Suggestions:</h4><ul>';
+    validation.suggestions.forEach(sugg => html += `<li>${sugg}</li>`);
+    html += '</ul></div>';
+  }
+  
+  // Full JSON (collapsible)
+  html += `<details class="result-section"><summary>View Full JSON</summary><pre class="result-json">${JSON.stringify(data, null, 2)}</pre></details>`;
+  html += '<button onclick="copyResult()" class="copy-btn">📋 Copy Result</button>';
+  html += '</div>';
+  
+  container.innerHTML = html;
+}
+
+function displayResumeResults(containerId, data, type = "ats") {
+  const container = document.getElementById(containerId);
+  let html = '<div class="result-card"><h3>📄 Resume Analysis Results</h3>';
+  
+  if (type === "full") {
+    // Full Report
+    const atsScore = data.atsScore || {};
+    const overallScore = atsScore.overallScore || 0;
+    
+    html += `<div class="result-section success-card"><h4>🎯 Overall ATS Score: <span class="score-badge">${overallScore}/100</span></h4></div>`;
+    
+    // Strengths
+    if (atsScore.strengths && atsScore.strengths.length > 0) {
+      html += '<div class="result-section suggestion-card"><h4>✅ Strengths:</h4><ul>';
+      atsScore.strengths.forEach(str => html += `<li>${str}</li>`);
+      html += '</ul></div>';
+    }
+    
+    // Weaknesses
+    if (atsScore.weaknesses && atsScore.weaknesses.length > 0) {
+      html += '<div class="result-section error-card"><h4>⚠️ Weaknesses:</h4><ul>';
+      atsScore.weaknesses.forEach(weak => html += `<li>${weak}</li>`);
+      html += '</ul></div>';
+    }
+    
+    // Recommendations
+    if (atsScore.recommendations && atsScore.recommendations.length > 0) {
+      html += '<div class="result-section suggestion-card"><h4>💡 Recommendations:</h4><ul>';
+      atsScore.recommendations.forEach(rec => html += `<li>${rec}</li>`);
+      html += '</ul></div>';
+    }
+    
+    // Skill Gaps
+    if (data.skillGaps && data.skillGaps.missingSkills && data.skillGaps.missingSkills.length > 0) {
+      html += '<div class="result-section warning-card"><h4>📊 Missing Skills:</h4><ul>';
+      data.skillGaps.missingSkills.forEach(skill => html += `<li>${skill}</li>`);
+      html += '</ul></div>';
+    }
+    
+    // Summary
+    if (data.summary) {
+      html += `<div class="result-section"><h4>📝 Executive Summary:</h4><p>${data.summary}</p></div>`;
+    }
+  } else {
+    // ATS Score only
+    const overallScore = data.overallScore || 0;
+    html += `<div class="result-section success-card"><h4>🎯 ATS Score: <span class="score-badge">${overallScore}/100</span></h4></div>`;
+    
+    if (data.strengths && data.strengths.length > 0) {
+      html += '<div class="result-section suggestion-card"><h4>✅ Strengths:</h4><ul>';
+      data.strengths.forEach(str => html += `<li>${str}</li>`);
+      html += '</ul></div>';
+    }
+    
+    if (data.weaknesses && data.weaknesses.length > 0) {
+      html += '<div class="result-section error-card"><h4>⚠️ Weaknesses:</h4><ul>';
+      data.weaknesses.forEach(weak => html += `<li>${weak}</li>`);
+      html += '</ul></div>';
+    }
+  }
+  
+  // Full JSON (collapsible)
+  html += `<details class="result-section"><summary>View Full JSON</summary><pre class="result-json">${JSON.stringify(data, null, 2)}</pre></details>`;
+  html += '<button onclick="copyResult()" class="copy-btn">📋 Copy Result</button>';
+  html += '</div>';
+  
+  container.innerHTML = html;
+}
+
+function displayBusinessResults(containerId, data) {
+  const container = document.getElementById(containerId);
+  let html = '<div class="result-card"><h3>📊 Business Document Analysis</h3>';
+  
+  // Summary
+  if (data.summary) {
+    html += `<div class="result-section"><h4>📝 Summary:</h4><p>${data.summary}</p></div>`;
+  }
+  
+  // Document Type
+  if (data.documentType) {
+    html += `<div class="result-section"><h4>📄 Document Type:</h4><p>${data.documentType}</p></div>`;
+  }
+  
+  // Key Insights
+  if (data.insights && data.insights.keyInsights) {
+    html += '<div class="result-section suggestion-card"><h4>💡 Key Insights:</h4><ul>';
+    data.insights.keyInsights.forEach(insight => html += `<li>${insight}</li>`);
+    html += '</ul></div>';
+  }
+  
+  // Risks
+  if (data.risks && data.risks.length > 0) {
+    html += '<div class="result-section error-card"><h4>⚠️ Risks & Red Flags:</h4><ul>';
+    data.risks.forEach(risk => html += `<li>${risk}</li>`);
+    html += '</ul></div>';
+  }
+  
+  // Action Items
+  if (data.actionItems && data.actionItems.length > 0) {
+    html += '<div class="result-section suggestion-card"><h4>✅ Action Items:</h4><ul>';
+    data.actionItems.forEach(item => html += `<li>${item}</li>`);
+    html += '</ul></div>';
+  }
+  
+  // Tables
+  if (data.tables && data.tables.length > 0) {
+    html += '<div class="result-section"><h4>📋 Extracted Tables:</h4>';
+    data.tables.forEach((table, idx) => {
+      html += `<div style="margin-top: 1rem;"><strong>${table.tableName || `Table ${idx + 1}`}</strong>`;
+      if (table.totalAmount) {
+        html += ` - Total: ${table.currency || '$'}${table.totalAmount}`;
+      }
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+  
+  // Full JSON (collapsible)
+  html += `<details class="result-section"><summary>View Full JSON</summary><pre class="result-json">${JSON.stringify(data, null, 2)}</pre></details>`;
+  html += '<button onclick="copyResult()" class="copy-btn">📋 Copy Result</button>';
+  html += '</div>';
+  
+  container.innerHTML = html;
+}
+
+function displayWebsiteResults(containerId, data) {
+  const container = document.getElementById(containerId);
+  let html = '<div class="result-card"><h3>🌐 Website Analysis Results</h3>';
+  
+  // SEO Score
+  const seoAnalysis = data.seoAnalysis || {};
+  const seoScore = seoAnalysis.seoScore || 0;
+  html += `<div class="result-section"><h4>SEO Score: <span class="score-badge">${seoScore}/100</span></h4></div>`;
+  
+  // Title
+  if (data.websiteData && data.websiteData.title) {
+    html += `<div class="result-section"><h4>📄 Title:</h4><p>${data.websiteData.title}</p></div>`;
+  }
+  
+  // Meta Description
+  if (data.websiteData && data.websiteData.metaDescription) {
+    html += `<div class="result-section"><h4>📝 Meta Description:</h4><p>${data.websiteData.metaDescription}</p></div>`;
+  }
+  
+  // Structure
+  const structure = data.structure || {};
+  html += `<div class="result-section"><h4>📊 Page Structure:</h4><ul>`;
+  html += `<li>H1 Tags: ${structure.h1Count || 0}</li>`;
+  html += `<li>H2 Tags: ${structure.h2Count || 0}</li>`;
+  html += `<li>H3 Tags: ${structure.h3Count || 0}</li>`;
+  html += `<li>Links: ${structure.linkCount || 0}</li>`;
+  html += `<li>Images: ${structure.imageCount || 0}</li>`;
+  html += '</ul></div>';
+  
+  // Issues
+  if (data.issues && data.issues.length > 0) {
+    html += '<div class="result-section error-card"><h4>❌ Issues:</h4><ul>';
+    data.issues.forEach(issue => html += `<li>${issue}</li>`);
+    html += '</ul></div>';
+  }
+  
+  // Opportunities
+  if (data.opportunities && data.opportunities.length > 0) {
+    html += '<div class="result-section suggestion-card"><h4>💡 Opportunities:</h4><ul>';
+    data.opportunities.forEach(opp => html += `<li>${opp}</li>`);
+    html += '</ul></div>';
+  }
+  
+  // Recommendations
+  if (data.recommendations && data.recommendations.length > 0) {
+    html += '<div class="result-section suggestion-card"><h4>✅ Recommendations:</h4><ul>';
+    data.recommendations.forEach(rec => html += `<li>${rec}</li>`);
+    html += '</ul></div>';
+  }
+  
+  // Keywords
+  if (data.keywords && data.keywords.length > 0) {
+    html += '<div class="result-section"><h4>🔑 Keywords:</h4><ul>';
+    data.keywords.slice(0, 10).forEach(kw => html += `<li>${kw}</li>`);
+    html += '</ul></div>';
+  }
+  
+  // Full JSON (collapsible)
+  html += `<details class="result-section"><summary>View Full JSON</summary><pre class="result-json">${JSON.stringify(data, null, 2)}</pre></details>`;
+  html += '<button onclick="copyResult()" class="copy-btn">📋 Copy Result</button>';
+  html += '</div>';
+  
+  container.innerHTML = html;
 }
 
 async function exportData() {

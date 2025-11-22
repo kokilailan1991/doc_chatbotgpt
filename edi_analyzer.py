@@ -39,58 +39,109 @@ class EDIAnalyzer:
             return "UNKNOWN"
     
     def validate_structure(self, content: str, format_type: str) -> Dict[str, Any]:
-        """Validate EDI structure"""
+        """Validate EDI structure with comprehensive rules"""
         errors = []
         warnings = []
+        suggestions = []
+        
+        content_upper = content.upper()
+        
+        # Container number validation regex
+        container_pattern = r'[A-Z]{4}[0-9]{7}'
+        containers_found = []
         
         if format_type == "BAPLIE":
-            if 'BGM+945' not in content.upper():
-                errors.append("Missing BGM segment (Message Header)")
-            if 'TDT+' not in content.upper():
+            if 'BGM+945' not in content_upper:
+                errors.append("Missing BGM segment (Message Header) - Required for BAPLIE")
+            if 'TDT+' not in content_upper:
                 warnings.append("Missing TDT segment (Transport Details)")
-            if 'LOC+' not in content.upper():
-                warnings.append("Missing LOC segment (Location)")
-            if 'EQD+' not in content.upper():
-                warnings.append("Missing EQD segment (Equipment Details)")
+            if 'LOC+' not in content_upper:
+                errors.append("Missing LOC segment (Location) - Required for container stowage")
+            if 'EQD+' not in content_upper:
+                errors.append("Missing EQD segment (Equipment Details) - Required for container info")
+            
+            # Check for container numbers
+            import re
+            containers = re.findall(container_pattern, content)
+            if not containers:
+                warnings.append("No valid container numbers found (format: ABCD1234567)")
+            else:
+                containers_found = list(set(containers))
+                # Check for duplicates
+                if len(containers) != len(containers_found):
+                    errors.append(f"Duplicate container records found: {len(containers) - len(containers_found)} duplicates")
+            
+            # Check for stowage positions
+            if 'LOC+147' not in content_upper and 'LOC+9' not in content_upper:
+                warnings.append("Missing stowage position information (LOC segments)")
+            
+            # Check for weight mismatches (basic check)
+            if 'MEA+AAE' in content_upper or 'MEA+WT' in content_upper:
+                # Weight information present
+                pass
+            else:
+                warnings.append("Missing weight information (MEA segments)")
         
         elif format_type == "MOVINS":
-            if 'BGM+910' not in content.upper():
+            if 'BGM+910' not in content_upper:
                 errors.append("Missing BGM segment (Message Header)")
-            if 'TDT+' not in content.upper():
+            if 'TDT+' not in content_upper:
                 warnings.append("Missing TDT segment (Transport Details)")
+            if 'NAD+' not in content_upper:
+                warnings.append("Missing NAD segment (Name and Address)")
+            if 'RFF+' not in content_upper:
+                warnings.append("Missing RFF segment (Reference)")
         
         elif format_type == "COPRAR":
-            if 'BGM+920' not in content.upper():
+            if 'BGM+920' not in content_upper:
                 errors.append("Missing BGM segment (Message Header)")
+            if 'NAD+' not in content_upper:
+                warnings.append("Missing NAD segment (Name and Address)")
         
         elif format_type == "IFTMIN":
-            if 'BGM+380' not in content.upper():
+            if 'BGM+380' not in content_upper:
                 errors.append("Missing BGM segment (Message Header)")
-            if 'TDT+' not in content.upper():
+            if 'TDT+' not in content_upper:
                 warnings.append("Missing TDT segment (Transport Details)")
         
         elif format_type == "CODECO":
-            if 'BGM+950' not in content.upper():
+            if 'BGM+950' not in content_upper:
                 errors.append("Missing BGM segment (Message Header)")
-            if 'CNT+' not in content.upper():
+            if 'CNT+' not in content_upper:
                 warnings.append("Missing CNT segment (Container Count)")
         
         elif format_type == "CUSCAR":
-            if 'BGM+951' not in content.upper():
+            if 'BGM+951' not in content_upper:
                 errors.append("Missing BGM segment (Message Header)")
-            if 'CUS+' not in content.upper():
+            if 'CUS+' not in content_upper:
                 warnings.append("Missing CUS segment (Customs Information)")
         
         # Check for basic EDI structure
         if format_type in ["EDIFACT", "BAPLIE", "MOVINS", "COPRAR"]:
             if "'" not in content and "+" not in content:
-                errors.append("Invalid EDI format - missing segment separators")
+                errors.append("Invalid EDI format - missing segment separators (' or +)")
+            else:
+                # Check segment count
+                segments = content.split("'")
+                if len(segments) < 5:
+                    warnings.append(f"Low segment count ({len(segments)} segments) - file may be incomplete")
+        
+        # Generate suggestions
+        if errors:
+            suggestions.append("Review EDI structure and ensure all required segments are present")
+        if warnings:
+            suggestions.append("Consider adding missing optional segments for better data completeness")
+        if containers_found and len(containers_found) > 0:
+            suggestions.append(f"Found {len(containers_found)} unique containers - verify container numbers match physical containers")
         
         return {
             "isValid": len(errors) == 0,
             "errors": errors,
             "warnings": warnings,
-            "formatType": format_type
+            "suggestions": suggestions,
+            "formatType": format_type,
+            "containersFound": len(containers_found),
+            "containerNumbers": containers_found[:10]  # First 10 for preview
         }
     
     def analyze_edi(self, retriever) -> Dict[str, Any]:
@@ -109,14 +160,15 @@ EDI Format: {format_type}
 Content: {context}
 
 Extract and return a JSON object with:
-- summary: brief summary of the EDI message
-- keyFields: [list of key fields and their values]
-- parties: [list of parties involved]
-- locations: [list of locations]
-- dates: [list of important dates]
-- quantities: [list of quantities]
-- errors: [list of data errors found]
-- warnings: [list of warnings]
+- summary: brief summary of the EDI message (2-3 sentences)
+- keyFields: [list of key fields and their values as objects with "name" and "value"]
+- parties: [list of parties involved with roles]
+- locations: [list of locations with types (origin, destination, etc.)]
+- dates: [list of important dates with descriptions]
+- quantities: [list of quantities with units]
+- containers: [list of container numbers and their details]
+- errors: [list of data errors found beyond structure validation]
+- warnings: [list of warnings beyond structure validation]
 
 Return ONLY valid JSON, no additional text.
 """
@@ -126,7 +178,7 @@ Return ONLY valid JSON, no additional text.
         
         result = chain.invoke({
             "format_type": format_type,
-            "context": content[:5000]  # Limit content length
+            "context": content[:8000]  # Increased limit for better analysis
         })
         
         try:
@@ -139,12 +191,16 @@ Return ONLY valid JSON, no additional text.
                     analysis = json.loads(json_match.group())
                 else:
                     analysis = {}
-        except:
+        except Exception as e:
+            print(f"Error parsing EDI analysis: {e}")
             analysis = {}
         
-        # Merge validation results
+        # Merge validation results and enhance
         analysis["validation"] = validation
         analysis["formatType"] = format_type
+        analysis["errors"] = validation.get("errors", []) + analysis.get("errors", [])
+        analysis["warnings"] = validation.get("warnings", []) + analysis.get("warnings", [])
+        analysis["suggestions"] = validation.get("suggestions", [])
         
         return analysis
     

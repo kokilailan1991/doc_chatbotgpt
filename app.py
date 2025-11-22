@@ -526,13 +526,43 @@ def website_analyzer_page():
                          meta_description="Paste any URL. Get instant SEO insights, structure breakdown, and recommendations.",
                          meta_keywords="website analyzer, SEO analyzer, content analyzer, website SEO checker")
 
-@app.route("/api/edi/analyze", methods=["POST"])
-def edi_analyze():
-    """Analyze EDI document"""
+@app.route("/api/analyze-edi", methods=["POST"])
+def analyze_edi():
+    """Analyze EDI document - NEW endpoint with proper text handling"""
     try:
-        retriever = retriever_cache.get("active")
-        if not retriever:
-            return jsonify({"error": "Please upload an EDI document first"}), 400
+        # Check if file is uploaded
+        if "file" in request.files:
+            file = request.files["file"]
+            if file.filename:
+                filename = secure_filename(file.filename)
+                path = os.path.join(UPLOAD_FOLDER, filename)
+                file.save(path)
+                
+                # Read as text if EDI file
+                file_ext = filename.lower()
+                is_edi_file = any(file_ext.endswith(ext) for ext in ['.edi', '.txt', '.baplie', '.movins', '.coprar'])
+                
+                if is_edi_file:
+                    with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+                        edi_content = f.read()
+                else:
+                    return jsonify({"error": "Please upload an EDI file (.edi, .txt, .baplie, .movins, .coprar)"}), 400
+            else:
+                return jsonify({"error": "No file provided"}), 400
+        else:
+            # Try to get from cache
+            retriever = retriever_cache.get("active")
+            if not retriever:
+                return jsonify({"error": "Please upload an EDI document first"}), 400
+            
+            # Extract text from retriever
+            def format_docs(docs):
+                return "\n\n".join(doc.page_content for doc in docs)
+            docs = retriever.get_relevant_documents("EDI document") if hasattr(retriever, 'get_relevant_documents') else []
+            edi_content = format_docs(docs) if docs else ""
+            
+            if not edi_content:
+                return jsonify({"error": "Could not extract EDI content"}), 400
         
         openai_key = os.getenv("OPENAI_API_KEY")
         if not openai_key:
@@ -540,12 +570,38 @@ def edi_analyze():
         
         if EDIAnalyzer:
             analyzer = EDIAnalyzer(openai_key)
+            
+            # Detect format and validate
+            format_type = analyzer.detect_edi_format(edi_content)
+            validation = analyzer.validate_structure(edi_content, format_type)
+            
+            # Create retriever for LLM analysis
+            docs = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100).create_documents([edi_content])
+            embeddings = OpenAIEmbeddings(openai_api_key=openai_key)
+            vectordb = FAISS.from_documents(docs, embeddings)
+            retriever = vectordb.as_retriever()
+            
+            # Get full analysis
             analysis = analyzer.analyze_edi(retriever)
+            
+            # Enhance with validation results
+            analysis["validation"] = validation
+            analysis["formatType"] = format_type
+            analysis["raw"] = edi_content[:1000]  # First 1000 chars for preview
+            
             return jsonify(analysis)
         else:
             return jsonify({"error": "EDIAnalyzer not available"}), 500
     except Exception as e:
+        print(f"❌ EDI Analyze error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
+@app.route("/api/edi/analyze", methods=["POST"])
+def edi_analyze():
+    """Analyze EDI document - Legacy endpoint"""
+    return analyze_edi()
 
 # ==================== OUTPUT FORMAT ENDPOINTS ====================
 
@@ -647,13 +703,27 @@ def upload_multi():
         path = os.path.join(UPLOAD_FOLDER, filename)
         file.save(path)
         
-        if not filename.endswith(".pdf"):
-            return jsonify({"error": "Only PDF files are supported"}), 400
+        # Detect file type by extension
+        file_ext = filename.lower()
+        is_edi_file = any(file_ext.endswith(ext) for ext in ['.edi', '.txt', '.baplie', '.movins', '.coprar'])
         
         text = ""
-        doc = fitz.open(path)
-        for page in doc:
-            text += page.get_text()
+        
+        if is_edi_file:
+            # Read EDI/text files as plain text
+            with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+                text = f.read()
+        elif filename.endswith(".pdf"):
+            # Read PDF files
+            doc = fitz.open(path)
+            for page in doc:
+                text += page.get_text()
+            doc.close()
+        else:
+            return jsonify({"error": "Unsupported file type. Please upload PDF, EDI, or text files."}), 400
+        
+        if not text.strip():
+            return jsonify({"error": "Could not extract text from file"}), 400
         
         docs = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100).create_documents([text])
         
@@ -662,10 +732,13 @@ def upload_multi():
         vectordb = FAISS.from_documents(docs, embeddings)
         
         retriever_cache[file_id] = vectordb.as_retriever()
-        file_store[file_id] = {"filename": filename, "uploaded_at": datetime.now().isoformat()}
+        file_store[file_id] = {"filename": filename, "uploaded_at": datetime.now().isoformat(), "fileType": "edi" if is_edi_file else "pdf"}
         
-        return jsonify({"message": "File uploaded successfully", "file_id": file_id})
+        return jsonify({"message": "File uploaded successfully", "file_id": file_id, "fileType": "edi" if is_edi_file else "pdf"})
     except Exception as e:
+        print(f"❌ Upload multi error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 # ==================== BUSINESS DOCS ENDPOINTS ====================
@@ -693,9 +766,9 @@ def business_docs_analyze():
 
 # ==================== WEBSITE ANALYZER ENDPOINTS ====================
 
-@app.route("/api/website/analyze", methods=["POST"])
-def website_analyze():
-    """Analyze website"""
+@app.route("/api/analyze-website", methods=["POST"])
+def analyze_website():
+    """Analyze website - Server-side endpoint to avoid CORS"""
     try:
         data = request.get_json()
         url = data.get("url")
@@ -703,28 +776,89 @@ def website_analyze():
         if not url:
             return jsonify({"error": "URL is required"}), 400
         
-        # Fetch URL and create retriever
-        page = requests.get(url, timeout=10, headers={
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        })
-        soup = BeautifulSoup(page.text, "html.parser")
-        text = soup.get_text()
+        # Ensure URL has protocol
+        if not url.startswith(('http://', 'https://')):
+            url = 'https://' + url
         
+        # Fetch URL server-side
+        try:
+            page = requests.get(url, timeout=15, headers={
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5'
+            }, allow_redirects=True)
+            page.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            return jsonify({"error": f"Could not fetch URL: {str(e)}"}), 400
+        
+        soup = BeautifulSoup(page.text, "html.parser")
+        
+        # Extract structured data
+        title = soup.find('title')
+        meta_desc = soup.find('meta', attrs={'name': 'description'}) or soup.find('meta', attrs={'property': 'og:description'})
+        meta_keywords = soup.find('meta', attrs={'name': 'keywords'})
+        
+        h1_tags = [h.get_text().strip() for h in soup.find_all('h1')]
+        h2_tags = [h.get_text().strip() for h in soup.find_all('h2')]
+        h3_tags = [h.get_text().strip() for h in soup.find_all('h3')]
+        
+        links = [a.get('href') for a in soup.find_all('a', href=True)]
+        images = [img.get('src') or img.get('data-src') for img in soup.find_all('img')]
+        
+        # Clean text content
+        for script in soup(["script", "style"]):
+            script.decompose()
+        text = soup.get_text()
+        text = ' '.join(text.split())  # Clean whitespace
+        
+        # Create retriever
         docs = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100).create_documents([text])
         
         openai_key = os.getenv("OPENAI_API_KEY")
+        if not openai_key:
+            return jsonify({"error": "OPENAI_API_KEY not configured"}), 500
+        
         embeddings = OpenAIEmbeddings(openai_api_key=openai_key)
         vectordb = FAISS.from_documents(docs, embeddings)
         retriever = vectordb.as_retriever()
         
         if WebsiteAnalyzer:
             analyzer = WebsiteAnalyzer(openai_key)
+            
+            # Prepare website data
+            website_data = {
+                "url": url,
+                "title": title.get_text().strip() if title else "",
+                "metaDescription": meta_desc.get('content', '') if meta_desc else "",
+                "metaKeywords": meta_keywords.get('content', '') if meta_keywords else "",
+                "h1Tags": h1_tags,
+                "h2Tags": h2_tags,
+                "h3Tags": h3_tags,
+                "links": links[:50],
+                "images": images[:20],
+                "content": text[:10000],
+                "html": page.text[:5000]
+            }
+            
+            # Get full analysis
             analysis = analyzer.full_website_analysis(url, retriever)
+            
+            # Enhance with extracted data
+            analysis["websiteData"] = website_data
+            
             return jsonify(analysis)
         else:
             return jsonify({"error": "WebsiteAnalyzer not available"}), 500
     except Exception as e:
+        print(f"❌ Website analyze error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
+@app.route("/api/website/analyze", methods=["POST"])
+def website_analyze():
+    """Analyze website - Legacy endpoint"""
+    return analyze_website()
 
 # ==================== DEMO ENDPOINTS ====================
 
@@ -733,12 +867,32 @@ def demo_resume():
     """Return demo resume data"""
     return jsonify({
         "demo": True,
-        "message": "Demo resume analysis",
-        "sampleData": {
-            "atsScore": {"overallScore": 75},
-            "strengths": ["Well-structured format", "Clear work history"],
-            "weaknesses": ["Missing keywords", "Could improve bullet points"]
-        }
+        "overallScore": 82,
+        "keywordScore": 20,
+        "formatScore": 18,
+        "skillsScore": 22,
+        "experienceScore": 18,
+        "educationScore": 4,
+        "strengths": [
+            "Well-structured format with clear sections",
+            "Strong work history with quantifiable achievements",
+            "Good use of action verbs",
+            "Professional summary present"
+        ],
+        "weaknesses": [
+            "Missing some industry-specific keywords",
+            "Could improve bullet point formatting",
+            "Skills section could be more detailed",
+            "Missing certifications section"
+        ],
+        "recommendations": [
+            "Add 5-7 more relevant keywords from job description",
+            "Use more specific metrics in bullet points",
+            "Include a certifications section",
+            "Optimize skills section with relevant technical skills"
+        ],
+        "missingKeywords": ["Python", "Machine Learning", "AWS", "Docker"],
+        "summary": "This resume shows strong potential with a solid foundation. The candidate has relevant experience and good formatting, but could benefit from keyword optimization and more detailed skill descriptions to improve ATS compatibility."
     })
 
 @app.route("/api/demo/business", methods=["GET"])
@@ -759,11 +913,27 @@ def demo_edi():
     """Return demo EDI data"""
     return jsonify({
         "demo": True,
-        "message": "Demo EDI analysis",
-        "sampleData": {
-            "formatType": "BAPLIE",
-            "validation": {"isValid": True, "errors": [], "warnings": []}
-        }
+        "formatType": "BAPLIE",
+        "summary": "Sample BAPLIE file containing container stowage plan for vessel MV EXAMPLE. Contains 45 containers with proper stowage positions.",
+        "validation": {
+            "isValid": True,
+            "errors": [],
+            "warnings": ["Missing weight information for 2 containers"],
+            "suggestions": ["Add MEA segments for complete weight data", "Verify container numbers match physical containers"],
+            "containersFound": 45,
+            "containerNumbers": ["ABCD1234567", "EFGH2345678", "IJKL3456789"]
+        },
+        "keyFields": [
+            {"name": "Vessel Name", "value": "MV EXAMPLE"},
+            {"name": "Voyage", "value": "V001"},
+            {"name": "Port of Loading", "value": "SINGAPORE"},
+            {"name": "Port of Discharge", "value": "ROTTERDAM"}
+        ],
+        "parties": ["Shipping Line ABC", "Terminal Operator XYZ"],
+        "locations": [
+            {"type": "Origin", "code": "SGSIN", "name": "Singapore"},
+            {"type": "Destination", "code": "NLRTM", "name": "Rotterdam"}
+        ]
     })
 
 @app.route("/api/demo/website", methods=["GET"])
@@ -797,13 +967,27 @@ def upload_file():
         path = os.path.join(UPLOAD_FOLDER, filename)
         file.save(path)
 
-        if not filename.endswith(".pdf"):
-            return jsonify({"error": "Only PDF files are supported"}), 400
-
+        # Detect file type by extension
+        file_ext = filename.lower()
+        is_edi_file = any(file_ext.endswith(ext) for ext in ['.edi', '.txt', '.baplie', '.movins', '.coprar'])
+        
         text = ""
-        doc = fitz.open(path)
-        for page in doc:
-            text += page.get_text()
+        
+        if is_edi_file:
+            # Read EDI/text files as plain text
+            with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+                text = f.read()
+        elif filename.endswith(".pdf"):
+            # Read PDF files
+            doc = fitz.open(path)
+            for page in doc:
+                text += page.get_text()
+            doc.close()
+        else:
+            return jsonify({"error": "Unsupported file type. Please upload PDF, EDI, or text files."}), 400
+
+        if not text.strip():
+            return jsonify({"error": "Could not extract text from file"}), 400
 
         docs = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100).create_documents([text])
 
@@ -812,10 +996,12 @@ def upload_file():
         vectordb = FAISS.from_documents(docs, embeddings)
         retriever_cache["active"] = vectordb.as_retriever()
 
-        return jsonify({"message": "✅ File uploaded and processed successfully."})
+        return jsonify({"message": "✅ File uploaded and processed successfully.", "fileType": "edi" if is_edi_file else "pdf"})
 
     except Exception as e:
         print(f"❌ Upload error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 @app.route("/fetch-url", methods=["POST"])
