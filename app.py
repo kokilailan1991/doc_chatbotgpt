@@ -20,11 +20,9 @@ try:
     from langchain_openai import OpenAIEmbeddings, ChatOpenAI
     from langchain_community.vectorstores import FAISS
     from langchain_text_splitters import CharacterTextSplitter
-    # Try to import RetrievalQA - will handle import errors in ask_question if needed
-    try:
-        from langchain.chains import RetrievalQA
-    except ImportError:
-        RetrievalQA = None  # Will use alternative method if not available
+    from langchain_core.prompts import PromptTemplate
+    from langchain_core.runnables import RunnablePassthrough
+    from langchain_core.output_parsers import StrOutputParser
 except ImportError as e:
     print(f"❌ Import error: {e}", file=sys.stderr)
     print("Please ensure all dependencies are installed.", file=sys.stderr)
@@ -118,31 +116,39 @@ def ask_question():
         if not retriever:
             return jsonify({"error": "Please upload a file or fetch a website first."}), 400
 
-        # Use RetrievalQA with proper error handling
-        try:
-            qa = RetrievalQA.from_chain_type(
-                llm=ChatOpenAI(temperature=0, openai_api_key=os.getenv("OPENAI_API_KEY")),
-                chain_type="stuff",
-                retriever=retriever,
-                return_source_documents=False
-            )
-            result = qa.invoke({"query": query})
-            # Handle different result formats
-            if isinstance(result, dict):
-                answer = result.get("result", str(result))
-            else:
-                answer = str(result)
-        except Exception as chain_error:
-            # Fallback: try alternative import or method
-            print(f"RetrievalQA error: {chain_error}, trying alternative approach")
-            from langchain.chains import ConversationalRetrievalChain
-            qa = ConversationalRetrievalChain.from_llm(
-                llm=ChatOpenAI(temperature=0, openai_api_key=os.getenv("OPENAI_API_KEY")),
-                retriever=retriever
-            )
-            result = qa({"question": query, "chat_history": []})
-            answer = result.get("answer", str(result))
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if not openai_key:
+            return jsonify({"error": "OPENAI_API_KEY not configured. Please set it in Railway environment variables."}), 500
 
+        # Use modern LangChain LCEL approach
+        llm = ChatOpenAI(temperature=0, openai_api_key=openai_key)
+        
+        # Create a prompt template
+        template = """Use the following pieces of context to answer the question. 
+If you don't know the answer, just say that you don't know, don't try to make up an answer.
+
+Context: {context}
+
+Question: {question}
+
+Answer:"""
+        
+        prompt = PromptTemplate.from_template(template)
+        
+        # Create the chain using LCEL
+        def format_docs(docs):
+            return "\n\n".join(doc.page_content for doc in docs)
+        
+        chain = (
+            {"context": retriever | format_docs, "question": RunnablePassthrough()}
+            | prompt
+            | llm
+            | StrOutputParser()
+        )
+        
+        # Invoke the chain
+        answer = chain.invoke(query)
+        
         return jsonify({"answer": answer})
 
     except Exception as e:
