@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-container">
+  <div class="page-header">
+    <h1>Resume Analyzer</h1>
+    <p class="subtitle">Get ATS Score, Match with Job Descriptions, and Improve Your Resume</p>
+  </div>
+
+  <div class="resume-analyzer-container">
+    <div class="upload-section">
+      <h3>Upload Your Resume</h3>
+      <form id="resumeUploadForm" enctype="multipart/form-data">
+        <input type="file" id="resumeFile" accept=".pdf" />
+        <button type="submit">Upload Resume</button>
+      </form>
+
+      <h3 style="margin-top: 30px;">Upload Job Description (Optional)</h3>
+      <form id="jdUploadForm" enctype="multipart/form-data">
+        <input type="file" id="jdFile" accept=".pdf" />
+        <button type="submit">Upload JD</button>
+      </form>
+    </div>
+
+    <div id="status" class="status-message"></div>
+
+    <div class="analysis-actions" id="actions" style="display: none;">
+      <button onclick="getATSScore()" class="action-btn primary">Get ATS Score</button>
+      <button onclick="matchWithJD()" class="action-btn primary">Match with JD</button>
+      <button onclick="getFullReport()" class="action-btn primary">Full Report</button>
+      <button onclick="rewriteResume()" class="action-btn secondary">Rewrite Resume</button>
+    </div>
+
+    <div id="results" class="results-container"></div>
+  </div>
+</div>
+
+<script>
+document.getElementById("resumeUploadForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const formData = new FormData();
+  formData.append("file", document.getElementById("resumeFile").files[0]);
+  formData.append("file_id", "active");
+  
+  const res = await fetch("/api/upload-multi", { method: "POST", body: formData });
+  const data = await res.json();
+  document.getElementById("status").innerText = data.message || data.error;
+  if (data.message) document.getElementById("actions").style.display = "block";
+});
+
+document.getElementById("jdUploadForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const formData = new FormData();
+  formData.append("file", document.getElementById("jdFile").files[0]);
+  formData.append("file_id", "jd");
+  
+  const res = await fetch("/api/upload-multi", { method: "POST", body: formData });
+  const data = await res.json();
+  document.getElementById("status").innerText += "\n" + (data.message || data.error);
+});
+
+async function getATSScore() {
+  const res = await fetch("/api/resume/ats-score", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({})
+  });
+  const data = await res.json();
+  displayResults(data);
+}
+
+async function matchWithJD() {
+  const res = await fetch("/api/resume/match-jd", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ jd_file_id: "jd" })
+  });
+  const data = await res.json();
+  displayResults(data);
+}
+
+async function getFullReport() {
+  const res = await fetch("/api/resume/full-report", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ jd_file_id: "jd" })
+  });
+  const data = await res.json();
+  displayResults(data);
+}
+
+async function rewriteResume() {
+  const res = await fetch("/api/resume/rewrite", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ improvements: [] })
+  });
+  const data = await res.json();
+  displayResults(data);
+}
+
+function displayResults(data) {
+  const container = document.getElementById("results");
+  container.innerHTML = `<div class="result-card"><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+}
+</script>
+{% endblock %}
+

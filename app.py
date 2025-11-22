@@ -6,12 +6,25 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import Flask and basic dependencies
-from flask import Flask, request, jsonify, send_from_directory, render_template
+from flask import Flask, request, jsonify, send_from_directory, render_template, Response
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import uuid
 import json
 from datetime import datetime
+
+# Import workflow modules
+try:
+    from workflows import WorkflowProcessor
+    from resume_analyzer import ResumeAnalyzer
+    from edi_analyzer import EDIAnalyzer
+    from output_formats import OutputGenerator
+except ImportError as e:
+    print(f"Warning: Could not import workflow modules: {e}")
+    WorkflowProcessor = None
+    ResumeAnalyzer = None
+    EDIAnalyzer = None
+    OutputGenerator = None
 
 # Import other dependencies with error handling
 try:
@@ -39,13 +52,14 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 retriever_cache = {}
 chat_history_store = {}  # Store chat histories for sharing
+file_store = {}  # Store multiple files for comparison
 
 @app.route("/", methods=["GET"])
 def serve_index():
-    return render_template("index.html", 
-                         page_title="AI Document Chatbot - Analyze PDFs with AI",
-                         meta_description="AI-powered chatbot to analyze and answer questions from PDF documents. Upload PDFs, ask questions, and get instant AI-powered answers.",
-                         meta_keywords="AI PDF reader, document AI, PDF analysis, PDF chatbot, document analysis")
+    return render_template("index_workflow.html", 
+                         page_title="AI Document Chatbot - Workflow-Driven Document Analysis",
+                         meta_description="AI-powered workflow-driven document analysis. Resume analyzer, business docs, EDI validator, and website analyzer. Beat NotebookLM and ChatPDF.",
+                         meta_keywords="AI PDF reader, document AI, PDF analysis, resume analyzer, ATS score, EDI validator, workflow AI")
 
 @app.route("/health", methods=["GET"])
 def health_check():
@@ -156,6 +170,412 @@ def export_pdf():
     # In production, use a library like reportlab or weasyprint
     data = request.get_json()
     return jsonify({"message": "PDF export feature coming soon", "data": data})
+
+# ==================== WORKFLOW ENDPOINTS ====================
+
+@app.route("/api/workflow/extract-insights", methods=["POST"])
+def workflow_extract_insights():
+    """Extract insights from document"""
+    try:
+        data = request.get_json()
+        document_type = data.get("document_type", "general")
+        retriever = retriever_cache.get("active")
+        
+        if not retriever:
+            return jsonify({"error": "Please upload a document first"}), 400
+        
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if not openai_key:
+            return jsonify({"error": "OPENAI_API_KEY not configured"}), 500
+        
+        if WorkflowProcessor:
+            processor = WorkflowProcessor(openai_key)
+            insights = processor.extract_insights(retriever, document_type)
+            return jsonify(insights)
+        else:
+            return jsonify({"error": "WorkflowProcessor not available"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/workflow/action-items", methods=["POST"])
+def workflow_action_items():
+    """Generate action items"""
+    try:
+        retriever = retriever_cache.get("active")
+        if not retriever:
+            return jsonify({"error": "Please upload a document first"}), 400
+        
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if not openai_key:
+            return jsonify({"error": "OPENAI_API_KEY not configured"}), 500
+        
+        if WorkflowProcessor:
+            processor = WorkflowProcessor(openai_key)
+            action_items = processor.generate_action_items(retriever)
+            return jsonify({"actionItems": action_items})
+        else:
+            return jsonify({"error": "WorkflowProcessor not available"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/workflow/summary", methods=["POST"])
+def workflow_summary():
+    """Create summary"""
+    try:
+        data = request.get_json()
+        summary_type = data.get("type", "executive")
+        retriever = retriever_cache.get("active")
+        
+        if not retriever:
+            return jsonify({"error": "Please upload a document first"}), 400
+        
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if not openai_key:
+            return jsonify({"error": "OPENAI_API_KEY not configured"}), 500
+        
+        if WorkflowProcessor:
+            processor = WorkflowProcessor(openai_key)
+            summary = processor.create_summary(retriever, summary_type)
+            return jsonify({"summary": summary})
+        else:
+            return jsonify({"error": "WorkflowProcessor not available"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/workflow/email-draft", methods=["POST"])
+def workflow_email_draft():
+    """Generate email draft"""
+    try:
+        data = request.get_json()
+        email_type = data.get("type", "summary")
+        retriever = retriever_cache.get("active")
+        
+        if not retriever:
+            return jsonify({"error": "Please upload a document first"}), 400
+        
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if not openai_key:
+            return jsonify({"error": "OPENAI_API_KEY not configured"}), 500
+        
+        if WorkflowProcessor:
+            processor = WorkflowProcessor(openai_key)
+            email = processor.generate_email_draft(retriever, email_type)
+            return jsonify(email)
+        else:
+            return jsonify({"error": "WorkflowProcessor not available"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/workflow/risk-analysis", methods=["POST"])
+def workflow_risk_analysis():
+    """Produce risk analysis"""
+    try:
+        retriever = retriever_cache.get("active")
+        if not retriever:
+            return jsonify({"error": "Please upload a document first"}), 400
+        
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if not openai_key:
+            return jsonify({"error": "OPENAI_API_KEY not configured"}), 500
+        
+        if WorkflowProcessor:
+            processor = WorkflowProcessor(openai_key)
+            risk_analysis = processor.produce_risk_analysis(retriever)
+            return jsonify(risk_analysis)
+        else:
+            return jsonify({"error": "WorkflowProcessor not available"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/workflow/compare", methods=["POST"])
+def workflow_compare():
+    """Compare two documents"""
+    try:
+        data = request.get_json()
+        file_id_1 = data.get("file_id_1", "active")
+        file_id_2 = data.get("file_id_2")
+        comparison_type = data.get("type", "general")
+        
+        retriever1 = retriever_cache.get(file_id_1)
+        retriever2 = retriever_cache.get(file_id_2) if file_id_2 else retriever_cache.get("active")
+        
+        if not retriever1 or not retriever2:
+            return jsonify({"error": "Please upload both documents first"}), 400
+        
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if not openai_key:
+            return jsonify({"error": "OPENAI_API_KEY not configured"}), 500
+        
+        if WorkflowProcessor:
+            processor = WorkflowProcessor(openai_key)
+            comparison = processor.compare_documents(retriever1, retriever2, comparison_type)
+            return jsonify(comparison)
+        else:
+            return jsonify({"error": "WorkflowProcessor not available"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ==================== RESUME ANALYZER ENDPOINTS ====================
+
+@app.route("/resume-analyzer", methods=["GET"])
+def resume_analyzer_page():
+    return render_template("resume_analyzer.html",
+                         page_title="Resume Analyzer - ATS Score & JD Matching | AI Document Chatbot",
+                         meta_description="Analyze your resume with AI. Get ATS score, match with job descriptions, and get AI-powered resume improvements.",
+                         meta_keywords="resume analyzer, ATS score, resume checker, JD match, resume optimization")
+
+@app.route("/api/resume/ats-score", methods=["POST"])
+def resume_ats_score():
+    """Calculate ATS score"""
+    try:
+        data = request.get_json()
+        jd_file_id = data.get("jd_file_id")
+        
+        resume_retriever = retriever_cache.get("active")
+        jd_retriever = retriever_cache.get(jd_file_id) if jd_file_id else None
+        
+        if not resume_retriever:
+            return jsonify({"error": "Please upload a resume first"}), 400
+        
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if not openai_key:
+            return jsonify({"error": "OPENAI_API_KEY not configured"}), 500
+        
+        if ResumeAnalyzer:
+            analyzer = ResumeAnalyzer(openai_key)
+            ats_score = analyzer.calculate_ats_score(resume_retriever, jd_retriever)
+            return jsonify(ats_score)
+        else:
+            return jsonify({"error": "ResumeAnalyzer not available"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/resume/match-jd", methods=["POST"])
+def resume_match_jd():
+    """Match resume with job description"""
+    try:
+        data = request.get_json()
+        jd_file_id = data.get("jd_file_id")
+        
+        resume_retriever = retriever_cache.get("active")
+        jd_retriever = retriever_cache.get(jd_file_id)
+        
+        if not resume_retriever or not jd_retriever:
+            return jsonify({"error": "Please upload both resume and job description"}), 400
+        
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if not openai_key:
+            return jsonify({"error": "OPENAI_API_KEY not configured"}), 500
+        
+        if ResumeAnalyzer:
+            analyzer = ResumeAnalyzer(openai_key)
+            match_result = analyzer.match_with_jd(resume_retriever, jd_retriever)
+            return jsonify(match_result)
+        else:
+            return jsonify({"error": "ResumeAnalyzer not available"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/resume/rewrite", methods=["POST"])
+def resume_rewrite():
+    """Rewrite resume with improvements"""
+    try:
+        data = request.get_json()
+        improvements = data.get("improvements", [])
+        
+        resume_retriever = retriever_cache.get("active")
+        if not resume_retriever:
+            return jsonify({"error": "Please upload a resume first"}), 400
+        
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if not openai_key:
+            return jsonify({"error": "OPENAI_API_KEY not configured"}), 500
+        
+        if ResumeAnalyzer:
+            analyzer = ResumeAnalyzer(openai_key)
+            rewritten = analyzer.rewrite_resume(resume_retriever, improvements)
+            return jsonify({"rewrittenResume": rewritten})
+        else:
+            return jsonify({"error": "ResumeAnalyzer not available"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/resume/full-report", methods=["POST"])
+def resume_full_report():
+    """Generate full resume analysis report"""
+    try:
+        data = request.get_json()
+        jd_file_id = data.get("jd_file_id")
+        
+        resume_retriever = retriever_cache.get("active")
+        jd_retriever = retriever_cache.get(jd_file_id) if jd_file_id else None
+        
+        if not resume_retriever:
+            return jsonify({"error": "Please upload a resume first"}), 400
+        
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if not openai_key:
+            return jsonify({"error": "OPENAI_API_KEY not configured"}), 500
+        
+        if ResumeAnalyzer:
+            analyzer = ResumeAnalyzer(openai_key)
+            report = analyzer.generate_resume_report(resume_retriever, jd_retriever)
+            return jsonify(report)
+        else:
+            return jsonify({"error": "ResumeAnalyzer not available"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ==================== EDI ANALYZER ENDPOINTS ====================
+
+@app.route("/edi-validator", methods=["GET"])
+def edi_validator_page():
+    return render_template("edi_validator.html",
+                         page_title="EDI Validator - BAPLIE MOVINS COPRAR Analyzer | AI Document Chatbot",
+                         meta_description="Validate and analyze EDI documents including BAPLIE, MOVINS, COPRAR formats. Get structured JSON and table outputs.",
+                         meta_keywords="EDI validator, BAPLIE, MOVINS, COPRAR, EDI analyzer, logistics EDI")
+
+@app.route("/api/edi/analyze", methods=["POST"])
+def edi_analyze():
+    """Analyze EDI document"""
+    try:
+        retriever = retriever_cache.get("active")
+        if not retriever:
+            return jsonify({"error": "Please upload an EDI document first"}), 400
+        
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if not openai_key:
+            return jsonify({"error": "OPENAI_API_KEY not configured"}), 500
+        
+        if EDIAnalyzer:
+            analyzer = EDIAnalyzer(openai_key)
+            analysis = analyzer.analyze_edi(retriever)
+            return jsonify(analysis)
+        else:
+            return jsonify({"error": "EDIAnalyzer not available"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ==================== OUTPUT FORMAT ENDPOINTS ====================
+
+@app.route("/api/export/json", methods=["POST"])
+def export_json():
+    """Export data as JSON"""
+    try:
+        data = request.get_json()
+        if OutputGenerator:
+            json_output = OutputGenerator.to_json(data.get("data", {}))
+            return Response(json_output, mimetype='application/json',
+                          headers={'Content-Disposition': 'attachment; filename=export.json'})
+        else:
+            return jsonify({"error": "OutputGenerator not available"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/export/excel", methods=["POST"])
+def export_excel():
+    """Export data as Excel CSV"""
+    try:
+        data = request.get_json()
+        if OutputGenerator:
+            csv_output = OutputGenerator.to_excel_csv(data.get("data", []))
+            return Response(csv_output, mimetype='text/csv',
+                          headers={'Content-Disposition': 'attachment; filename=export.csv'})
+        else:
+            return jsonify({"error": "OutputGenerator not available"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/export/email", methods=["POST"])
+def export_email():
+    """Generate email draft"""
+    try:
+        data = request.get_json()
+        if OutputGenerator:
+            email = OutputGenerator.to_email_draft(
+                data.get("subject", "Document Summary"),
+                data.get("body", ""),
+                data.get("recipients", [])
+            )
+            return jsonify(email)
+        else:
+            return jsonify({"error": "OutputGenerator not available"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/export/slack", methods=["POST"])
+def export_slack():
+    """Generate Slack message"""
+    try:
+        data = request.get_json()
+        if OutputGenerator:
+            slack_msg = OutputGenerator.to_slack_message(
+                data.get("title", "Document Analysis"),
+                data.get("content", ""),
+                data.get("fields", [])
+            )
+            return jsonify(slack_msg)
+        else:
+            return jsonify({"error": "OutputGenerator not available"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/export/teams", methods=["POST"])
+def export_teams():
+    """Generate Teams message"""
+    try:
+        data = request.get_json()
+        if OutputGenerator:
+            teams_msg = OutputGenerator.to_teams_message(
+                data.get("title", "Document Analysis"),
+                data.get("content", ""),
+                data.get("facts", [])
+            )
+            return jsonify(teams_msg)
+        else:
+            return jsonify({"error": "OutputGenerator not available"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ==================== MULTI-FILE ENDPOINTS ====================
+
+@app.route("/api/upload-multi", methods=["POST"])
+def upload_multi():
+    """Upload multiple files for comparison"""
+    try:
+        if "file" not in request.files:
+            return jsonify({"error": "No file part"}), 400
+        
+        file = request.files["file"]
+        file_id = request.form.get("file_id", str(uuid.uuid4())[:8])
+        
+        if file.filename == "":
+            return jsonify({"error": "No selected file"}), 400
+        
+        filename = secure_filename(file.filename)
+        path = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(path)
+        
+        if not filename.endswith(".pdf"):
+            return jsonify({"error": "Only PDF files are supported"}), 400
+        
+        text = ""
+        doc = fitz.open(path)
+        for page in doc:
+            text += page.get_text()
+        
+        docs = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100).create_documents([text])
+        
+        openai_key = os.getenv("OPENAI_API_KEY")
+        embeddings = OpenAIEmbeddings(openai_api_key=openai_key)
+        vectordb = FAISS.from_documents(docs, embeddings)
+        
+        retriever_cache[file_id] = vectordb.as_retriever()
+        file_store[file_id] = {"filename": filename, "uploaded_at": datetime.now().isoformat()}
+        
+        return jsonify({"message": "File uploaded successfully", "file_id": file_id})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/styles.css", methods=["GET"])
 def serve_css():

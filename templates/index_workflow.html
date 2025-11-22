@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="workflow-container">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('resume')">Resume</button>
+    <button class="tab-btn" onclick="switchTab('business')">Business Docs</button>
+    <button class="tab-btn" onclick="switchTab('edi')">Logistics EDI</button>
+    <button class="tab-btn" onclick="switchTab('website')">Website Analyzer</button>
+  </div>
+
+  <!-- Resume Tab -->
+  <div id="resume-tab" class="tab-content active">
+    <h2>📄 Resume Analyzer</h2>
+    <p class="tab-description">Upload your resume to get ATS score, match with job descriptions, and get AI-powered improvements.</p>
+    
+    <div class="upload-section">
+      <form id="resumeUploadForm" enctype="multipart/form-data">
+        <label>Upload Resume:</label>
+        <input type="file" id="resumeFile" accept=".pdf" />
+        <button type="submit">Upload Resume</button>
+      </form>
+      
+      <form id="jdUploadForm" enctype="multipart/form-data" style="margin-top: 15px;">
+        <label>Upload Job Description (Optional):</label>
+        <input type="file" id="jdFile" accept=".pdf" />
+        <button type="submit">Upload JD</button>
+      </form>
+    </div>
+
+    <div id="resumeStatus" class="status-message"></div>
+
+    <div class="workflow-actions" id="resumeActions" style="display: none;">
+      <button onclick="getATSScore()" class="workflow-btn">Get ATS Score</button>
+      <button onclick="matchWithJD()" class="workflow-btn">Match with JD</button>
+      <button onclick="getFullReport()" class="workflow-btn">Full Report</button>
+      <button onclick="rewriteResume()" class="workflow-btn">Rewrite Resume</button>
+    </div>
+
+    <div id="resumeResults" class="results-section"></div>
+  </div>
+
+  <!-- Business Docs Tab -->
+  <div id="business-tab" class="tab-content">
+    <h2>📊 Business Documents</h2>
+    <p class="tab-description">Analyze contracts, invoices, and business documents with AI workflows.</p>
+    
+    <div class="upload-section">
+      <form id="businessUploadForm" enctype="multipart/form-data">
+        <label>Upload Document:</label>
+        <input type="file" id="businessFile" accept=".pdf" />
+        <button type="submit">Upload</button>
+      </form>
+    </div>
+
+    <div id="businessStatus" class="status-message"></div>
+
+    <div class="workflow-actions" id="businessActions" style="display: none;">
+      <button onclick="extractInsights()" class="workflow-btn">Extract Insights</button>
+      <button onclick="generateActionItems()" class="workflow-btn">Action Items</button>
+      <button onclick="createSummary()" class="workflow-btn">Create Summary</button>
+      <button onclick="riskAnalysis()" class="workflow-btn">Risk Analysis</button>
+      <button onclick="generateEmail()" class="workflow-btn">Email Draft</button>
+    </div>
+
+    <div class="output-format-selector" style="margin-top: 15px;">
+      <label>Export Format:</label>
+      <select id="outputFormat">
+        <option value="json">JSON</option>
+        <option value="excel">Excel/CSV</option>
+        <option value="email">Email</option>
+        <option value="slack">Slack</option>
+        <option value="teams">Teams</option>
+      </select>
+      <button onclick="exportData()" class="export-btn">Export</button>
+    </div>
+
+    <div id="businessResults" class="results-section"></div>
+  </div>
+
+  <!-- EDI Tab -->
+  <div id="edi-tab" class="tab-content">
+    <h2>🚢 Logistics EDI Analyzer</h2>
+    <p class="tab-description">Validate and analyze EDI documents (BAPLIE, MOVINS, COPRAR).</p>
+    
+    <div class="upload-section">
+      <form id="ediUploadForm" enctype="multipart/form-data">
+        <label>Upload EDI Document:</label>
+        <input type="file" id="ediFile" accept=".pdf,.txt,.edi" />
+        <button type="submit">Upload & Analyze</button>
+      </form>
+    </div>
+
+    <div id="ediStatus" class="status-message"></div>
+    <div id="ediResults" class="results-section"></div>
+  </div>
+
+  <!-- Website Tab -->
+  <div id="website-tab" class="tab-content">
+    <h2>🌐 Website Analyzer</h2>
+    <p class="tab-description">Analyze website content and extract insights.</p>
+    
+    <form id="urlForm">
+      <label>Enter Website URL:</label>
+      <input type="url" id="urlInput" placeholder="https://example.com" />
+      <button type="submit">Analyze Website</button>
+    </form>
+
+    <div id="websiteStatus" class="status-message"></div>
+
+    <div class="workflow-actions" id="websiteActions" style="display: none;">
+      <button onclick="extractInsights()" class="workflow-btn">Extract Insights</button>
+      <button onclick="createSummary()" class="workflow-btn">Create Summary</button>
+    </div>
+
+    <div id="websiteResults" class="results-section"></div>
+  </div>
+</div>
+
+<script>
+let currentFileId = "active";
+let currentTab = "resume";
+
+function switchTab(tabName) {
+  // Hide all tabs
+  document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  
+  // Show selected tab
+  document.getElementById(tabName + '-tab').classList.add('active');
+  event.target.classList.add('active');
+  currentTab = tabName;
+}
+
+// Resume Analyzer Functions
+document.getElementById("resumeUploadForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const formData = new FormData();
+  formData.append("file", document.getElementById("resumeFile").files[0]);
+  formData.append("file_id", "active");
+  
+  const res = await fetch("/api/upload-multi", { method: "POST", body: formData });
+  const data = await res.json();
+  document.getElementById("resumeStatus").innerText = data.message || data.error;
+  if (data.message) document.getElementById("resumeActions").style.display = "block";
+});
+
+document.getElementById("jdUploadForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const formData = new FormData();
+  formData.append("file", document.getElementById("jdFile").files[0]);
+  formData.append("file_id", "jd");
+  
+  const res = await fetch("/api/upload-multi", { method: "POST", body: formData });
+  const data = await res.json();
+  document.getElementById("resumeStatus").innerText += "\n" + (data.message || data.error);
+});
+
+async function getATSScore() {
+  const res = await fetch("/api/resume/ats-score", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({})
+  });
+  const data = await res.json();
+  displayResults("resumeResults", data);
+}
+
+async function matchWithJD() {
+  const res = await fetch("/api/resume/match-jd", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ jd_file_id: "jd" })
+  });
+  const data = await res.json();
+  displayResults("resumeResults", data);
+}
+
+async function getFullReport() {
+  const res = await fetch("/api/resume/full-report", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ jd_file_id: "jd" })
+  });
+  const data = await res.json();
+  displayResults("resumeResults", data);
+}
+
+async function rewriteResume() {
+  const res = await fetch("/api/resume/rewrite", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ improvements: [] })
+  });
+  const data = await res.json();
+  displayResults("resumeResults", data);
+}
+
+// Business Docs Functions
+document.getElementById("businessUploadForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const formData = new FormData();
+  formData.append("file", document.getElementById("businessFile").files[0]);
+  
+  const res = await fetch("/upload", { method: "POST", body: formData });
+  const data = await res.json();
+  document.getElementById("businessStatus").innerText = data.message || data.error;
+  if (data.message) document.getElementById("businessActions").style.display = "block";
+});
+
+async function extractInsights() {
+  const res = await fetch("/api/workflow/extract-insights", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ document_type: "business" })
+  });
+  const data = await res.json();
+  displayResults("businessResults", data);
+}
+
+async function generateActionItems() {
+  const res = await fetch("/api/workflow/action-items", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({})
+  });
+  const data = await res.json();
+  displayResults("businessResults", data);
+}
+
+async function createSummary() {
+  const res = await fetch("/api/workflow/summary", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type: "executive" })
+  });
+  const data = await res.json();
+  displayResults("businessResults", data);
+}
+
+async function riskAnalysis() {
+  const res = await fetch("/api/workflow/risk-analysis", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({})
+  });
+  const data = await res.json();
+  displayResults("businessResults", data);
+}
+
+async function generateEmail() {
+  const res = await fetch("/api/workflow/email-draft", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type: "summary" })
+  });
+  const data = await res.json();
+  displayResults("businessResults", data);
+}
+
+// EDI Functions
+document.getElementById("ediUploadForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const formData = new FormData();
+  formData.append("file", document.getElementById("ediFile").files[0]);
+  
+  const res = await fetch("/upload", { method: "POST", body: formData });
+  const data = await res.json();
+  document.getElementById("ediStatus").innerText = data.message || data.error;
+  
+  if (data.message) {
+    const analysisRes = await fetch("/api/edi/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    });
+    const analysisData = await analysisRes.json();
+    displayResults("ediResults", analysisData);
+  }
+});
+
+// Website Functions
+document.getElementById("urlForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const url = document.getElementById("urlInput").value;
+  const res = await fetch("/fetch-url", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url })
+  });
+  const data = await res.json();
+  document.getElementById("websiteStatus").innerText = data.message || data.error;
+  if (data.message) document.getElementById("websiteActions").style.display = "block";
+});
+
+// Utility Functions
+function displayResults(containerId, data) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+}
+
+async function exportData() {
+  const format = document.getElementById("outputFormat").value;
+  const results = document.getElementById("businessResults").innerText;
+  
+  const res = await fetch(`/api/export/${format}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ data: JSON.parse(results || "{}") })
+  });
+  
+  if (format === "json" || format === "excel") {
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `export.${format === "json" ? "json" : "csv"}`;
+    a.click();
+  } else {
+    const data = await res.json();
+    alert(`Export ready! Check console for ${format} format.`);
+    console.log(data);
+  }
+}
+</script>
+{% endblock %}
+
