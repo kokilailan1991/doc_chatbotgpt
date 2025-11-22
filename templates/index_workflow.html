@@ -126,8 +126,8 @@
   </div>
 </section>
 
-<!-- Main Content Container -->
-<div class="main-content-wrapper">
+<!-- Main Content Container - Only show when tab is clicked -->
+<div class="main-content-wrapper" id="toolSection" style="display: none;">
   <!-- Tabs Section -->
   <div class="tabs-wrapper">
     <div class="tabs">
@@ -289,6 +289,12 @@ let currentFileId = "active";
 let currentTab = "resume";
 
 function switchTab(tabName) {
+  // Show tool section if hidden
+  const toolSection = document.getElementById('toolSection');
+  if (toolSection) {
+    toolSection.style.display = 'block';
+  }
+  
   // Hide all tabs
   document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -302,7 +308,11 @@ function switchTab(tabName) {
   // Update active button
   const buttons = document.querySelectorAll('.tab-btn');
   buttons.forEach(btn => {
-    if (btn.textContent.includes(tabName === 'resume' ? 'Resume' : tabName === 'business' ? 'Business' : tabName === 'edi' ? 'EDI' : 'Website')) {
+    const btnText = btn.textContent.toLowerCase();
+    if ((tabName === 'resume' && btnText.includes('resume')) ||
+        (tabName === 'business' && btnText.includes('business')) ||
+        (tabName === 'edi' && btnText.includes('edi')) ||
+        (tabName === 'website' && btnText.includes('website'))) {
       btn.classList.add('active');
     }
   });
@@ -311,7 +321,7 @@ function switchTab(tabName) {
   
   // Scroll to tab content
   setTimeout(() => {
-    targetTab?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    toolSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 100);
 }
 
