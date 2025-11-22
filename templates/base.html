@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}{{ page_title or 'AI Document Chatbot' }}{% endblock %}</title>
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="{% block meta_description %}{{ meta_description or 'AI-powered chatbot to analyze and answer questions from PDF documents.' }}{% endblock %}">
+  <meta name="keywords" content="{% block meta_keywords %}{{ meta_keywords or 'AI PDF reader, document AI, PDF analysis, PDF chatbot' }}{% endblock %}">
+  <meta name="author" content="AIGPT Technologies">
+  <link rel="canonical" href="https://bot.aigpt.co.in{{ request.path }}">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://bot.aigpt.co.in{{ request.path }}">
+  <meta property="og:title" content="{% block og_title %}{{ page_title or 'AI Document Chatbot' }}{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}{{ meta_description or 'AI-powered chatbot to analyze and answer questions from PDF documents.' }}{% endblock %}">
+  <meta property="og:image" content="https://bot.aigpt.co.in/static/og-image.png">
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://bot.aigpt.co.in{{ request.path }}">
+  <meta property="twitter:title" content="{% block twitter_title %}{{ page_title or 'AI Document Chatbot' }}{% endblock %}">
+  <meta property="twitter:description" content="{% block twitter_description %}{{ meta_description or 'AI-powered chatbot to analyze and answer questions from PDF documents.' }}{% endblock %}">
+  <meta property="twitter:image" content="https://bot.aigpt.co.in/static/og-image.png">
+  
+  <link href="/styles.css" rel="stylesheet" />
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="main-nav">
+    <div class="nav-container">
+      <a href="/" class="nav-logo">📄 AI Document Chatbot</a>
+      <div class="nav-menu">
+        <a href="/" class="nav-link">Home</a>
+        <div class="nav-dropdown">
+          <a href="#" class="nav-link">Tools <span>▼</span></a>
+          <div class="dropdown-content">
+            <a href="/tools/pdf-summary">PDF Summary AI</a>
+            <a href="/tools/invoice-reader">Invoice Reader AI</a>
+            <a href="/tools/contract-analyzer">Contract Analyzer AI</a>
+            <a href="/tools/salary-slip-analyzer">Salary Slip Analyzer</a>
+            <a href="/tools/resume-analyzer">Resume Analyzer AI</a>
+            <a href="/tools/website-summary">Website-to-Summary AI</a>
+          </div>
+        </div>
+        <a href="/about" class="nav-link">About</a>
+        <a href="/contact" class="nav-link">Contact</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="main-footer">
+    <div class="footer-container">
+      <p>© AIGPT Technologies – All rights reserved.</p>
+      <div class="footer-links">
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JSON-LD Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "AIGPT Technologies",
+    "email": "kokilavijayakumar2@gmail.com",
+    "telephone": "+91-99623-52046",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Chennai",
+      "addressCountry": "IN"
+    },
+    "url": "https://bot.aigpt.co.in",
+    "description": "AI-powered chatbots, automation tools, web development, and Navis TOS services"
+  }
+  </script>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>
+

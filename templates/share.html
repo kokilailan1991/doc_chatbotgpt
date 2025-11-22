@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-container">
+  <div class="page-header">
+    <h1>Shared Chat Analysis</h1>
+    <p class="subtitle">View shared document analysis</p>
+  </div>
+
+  <div class="chat-container">
+    <div id="chatThread" class="chat-thread">
+      {% for message in chat_data.messages %}
+      <div class="chat {{ message.type }}">
+        <strong>{% if message.type == 'user' %}You{% else %}Bot{% endif %}:</strong> {{ message.content }}
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="share-actions">
+      <button onclick="shareOnWhatsApp()" class="share-btn whatsapp">📱 Share on WhatsApp</button>
+      <button onclick="shareOnLinkedIn()" class="share-btn linkedin">💼 Share on LinkedIn</button>
+      <button onclick="shareOnTwitter()" class="share-btn twitter">🐦 Share on Twitter</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function shareOnWhatsApp() {
+    const text = encodeURIComponent("Check out this shared document analysis! " + window.location.href);
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  }
+
+  function shareOnLinkedIn() {
+    const url = encodeURIComponent(window.location.href);
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank');
+  }
+
+  function shareOnTwitter() {
+    const text = encodeURIComponent("Check out this shared document analysis!");
+    const url = encodeURIComponent(window.location.href);
+    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+  }
+</script>
+{% endblock %}
+

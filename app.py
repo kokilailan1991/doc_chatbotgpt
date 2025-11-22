@@ -6,9 +6,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import Flask and basic dependencies
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, render_template
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
+import uuid
+import json
+from datetime import datetime
 
 # Import other dependencies with error handling
 try:
@@ -28,22 +31,131 @@ except ImportError as e:
     print("Please ensure all dependencies are installed.", file=sys.stderr)
     sys.exit(1)
 
-app = Flask(__name__, static_url_path="", static_folder=".")
+app = Flask(__name__, static_url_path="", static_folder=".", template_folder="templates")
 CORS(app)
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 retriever_cache = {}
+chat_history_store = {}  # Store chat histories for sharing
 
 @app.route("/", methods=["GET"])
 def serve_index():
-    return send_from_directory(".", "index.html")
+    return render_template("index.html", 
+                         page_title="AI Document Chatbot - Analyze PDFs with AI",
+                         meta_description="AI-powered chatbot to analyze and answer questions from PDF documents. Upload PDFs, ask questions, and get instant AI-powered answers.",
+                         meta_keywords="AI PDF reader, document AI, PDF analysis, PDF chatbot, document analysis")
 
 @app.route("/health", methods=["GET"])
 def health_check():
     """Health check endpoint for Railway"""
     return jsonify({"status": "ok", "message": "Server is running"}), 200
+
+# New pages
+@app.route("/about", methods=["GET"])
+def about():
+    return render_template("about.html",
+                         page_title="About AI Document Chatbot - AIGPT Technologies",
+                         meta_description="Learn about AI Document Chatbot built by AIGPT Technologies. AI-powered PDF analysis, Q&A, text extraction, and more.",
+                         meta_keywords="AI PDF reader, document AI, PDF analysis, AIGPT Technologies")
+
+@app.route("/contact", methods=["GET", "POST"])
+def contact():
+    if request.method == "POST":
+        data = request.get_json()
+        # In production, you'd send an email here
+        return jsonify({"success": True, "message": "Thank you for contacting us! We'll get back to you soon."})
+    return render_template("contact.html",
+                         page_title="Contact Us - AIGPT Technologies",
+                         meta_description="Contact AIGPT Technologies for AI chatbots, automation tools, web development, and Navis TOS services.",
+                         meta_keywords="contact AIGPT, AI chatbot services, automation tools")
+
+# Tool pages
+@app.route("/tools/pdf-summary", methods=["GET"])
+def tool_pdf_summary():
+    return render_template("tool.html",
+                         tool_slug="pdf-summary",
+                         tool_name="PDF Summary AI",
+                         tool_description="AI-powered PDF summarization tool",
+                         page_title="PDF Summary AI - AI Document Chatbot",
+                         meta_description="AI-powered PDF summarization tool",
+                         meta_keywords="AI PDF reader, PDF summary, document AI, PDF analysis")
+
+@app.route("/tools/invoice-reader", methods=["GET"])
+def tool_invoice_reader():
+    return render_template("tool.html",
+                         tool_slug="invoice-reader",
+                         tool_name="Invoice Reader AI",
+                         tool_description="Extract and analyze invoice data with AI",
+                         page_title="Invoice Reader AI - AI Document Chatbot",
+                         meta_description="Extract and analyze invoice data with AI",
+                         meta_keywords="AI PDF reader, invoice reader, document AI, PDF analysis")
+
+@app.route("/tools/contract-analyzer", methods=["GET"])
+def tool_contract_analyzer():
+    return render_template("tool.html",
+                         tool_slug="contract-analyzer",
+                         tool_name="Contract Analyzer AI",
+                         tool_description="Analyze contracts and legal documents with AI",
+                         page_title="Contract Analyzer AI - AI Document Chatbot",
+                         meta_description="Analyze contracts and legal documents with AI",
+                         meta_keywords="AI PDF reader, contract analyzer, document AI, PDF analysis")
+
+@app.route("/tools/salary-slip-analyzer", methods=["GET"])
+def tool_salary_slip():
+    return render_template("tool.html",
+                         tool_slug="salary-slip-analyzer",
+                         tool_name="Salary Slip Analyzer",
+                         tool_description="Analyze salary slips and payroll documents",
+                         page_title="Salary Slip Analyzer - AI Document Chatbot",
+                         meta_description="Analyze salary slips and payroll documents",
+                         meta_keywords="AI PDF reader, salary slip analyzer, document AI, PDF analysis")
+
+@app.route("/tools/resume-analyzer", methods=["GET"])
+def tool_resume_analyzer():
+    return render_template("tool.html",
+                         tool_slug="resume-analyzer",
+                         tool_name="Resume Analyzer AI",
+                         tool_description="Analyze resumes and CVs with AI",
+                         page_title="Resume Analyzer AI - AI Document Chatbot",
+                         meta_description="Analyze resumes and CVs with AI",
+                         meta_keywords="AI PDF reader, resume analyzer, document AI, PDF analysis")
+
+@app.route("/tools/website-summary", methods=["GET"])
+def tool_website_summary():
+    return render_template("tool.html",
+                         tool_slug="website-summary",
+                         tool_name="Website-to-Summary AI",
+                         tool_description="Convert websites into summaries with AI",
+                         page_title="Website-to-Summary AI - AI Document Chatbot",
+                         meta_description="Convert websites into summaries with AI",
+                         meta_keywords="AI PDF reader, website summary, document AI, PDF analysis")
+
+# Share and export endpoints
+@app.route("/share/<share_id>", methods=["GET"])
+def share_page(share_id):
+    chat_data = chat_history_store.get(share_id)
+    if not chat_data:
+        return render_template("404.html"), 404
+    return render_template("share.html", chat_data=chat_data, share_id=share_id)
+
+@app.route("/api/save-chat", methods=["POST"])
+def save_chat():
+    data = request.get_json()
+    share_id = str(uuid.uuid4())[:8]
+    chat_history_store[share_id] = {
+        "messages": data.get("messages", []),
+        "created_at": datetime.now().isoformat(),
+        "share_id": share_id
+    }
+    return jsonify({"share_id": share_id, "share_url": f"/share/{share_id}"})
+
+@app.route("/api/export-pdf", methods=["POST"])
+def export_pdf():
+    # In production, use a library like reportlab or weasyprint
+    data = request.get_json()
+    return jsonify({"message": "PDF export feature coming soon", "data": data})
 
 @app.route("/styles.css", methods=["GET"])
 def serve_css():

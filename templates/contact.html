@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-container">
+  <div class="page-header">
+    <h1>Contact Us</h1>
+    <p class="subtitle">Get in touch with AIGPT Technologies</p>
+  </div>
+
+  <div class="contact-container">
+    <div class="contact-form-section">
+      <h2>Send us a Message</h2>
+      <form id="contactForm">
+        <div class="form-group">
+          <label for="name">Name:</label>
+          <input type="text" id="name" name="name" required />
+        </div>
+        <div class="form-group">
+          <label for="email">Email:</label>
+          <input type="email" id="email" name="email" required />
+        </div>
+        <div class="form-group">
+          <label for="message">Message:</label>
+          <textarea id="message" name="message" rows="5" required></textarea>
+        </div>
+        <button type="submit" class="submit-btn">Send Message</button>
+      </form>
+      <div id="contactStatus" style="margin-top: 15px;"></div>
+    </div>
+
+    <div class="contact-info-section">
+      <h2>Contact Information</h2>
+      <div class="contact-details">
+        <div class="contact-item">
+          <strong>AIGPT Technologies</strong>
+        </div>
+        <div class="contact-item">
+          <span class="contact-label">Email:</span>
+          <a href="mailto:kokilavijayakumar2@gmail.com">kokilavijayakumar2@gmail.com</a>
+        </div>
+        <div class="contact-item">
+          <span class="contact-label">Phone:</span>
+          <a href="tel:+919962352046">+91 99623 52046</a>
+        </div>
+        <div class="contact-item">
+          <span class="contact-label">Location:</span>
+          Chennai, India
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById("contactForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const formData = {
+      name: document.getElementById("name").value,
+      email: document.getElementById("email").value,
+      message: document.getElementById("message").value
+    };
+
+    const res = await fetch("/contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
+
+    const data = await res.json();
+    const statusDiv = document.getElementById("contactStatus");
+    if (data.success) {
+      statusDiv.innerHTML = '<div class="success-message">✅ ' + data.message + '</div>';
+      document.getElementById("contactForm").reset();
+    } else {
+      statusDiv.innerHTML = '<div class="error-message">❌ ' + (data.error || 'Something went wrong') + '</div>';
+    }
+  });
+</script>
+{% endblock %}
+

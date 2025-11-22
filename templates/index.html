@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="chat-container">
+  <h1>📄 <span>AI Document Chatbot</span></h1>
+
+  <form id="uploadForm" enctype="multipart/form-data">
+    <label for="fileUpload">Upload a PDF File:</label>
+    <input type="file" id="fileUpload" name="file" accept=".pdf" />
+    <button type="submit">Upload</button>
+  </form>
+
+  <form id="urlForm">
+    <label for="urlInput">Or Enter Website URL:</label>
+    <input type="url" id="urlInput" name="url" placeholder="https://example.com"/>
+    <button type="submit">Fetch & Analyze</button>
+  </form>
+
+  <div id="fileStatus">✅ Ready for document analysis...</div>
+
+  <div id="chatThread" class="chat-thread"></div>
+
+  <!-- Viral Growth Features -->
+  <div class="viral-features" id="viralFeatures" style="display: none;">
+    <div class="share-buttons">
+      <button onclick="shareOnWhatsApp()" class="share-btn whatsapp">📱 Share on WhatsApp</button>
+      <button onclick="shareOnLinkedIn()" class="share-btn linkedin">💼 Share on LinkedIn</button>
+      <button onclick="shareOnTwitter()" class="share-btn twitter">🐦 Share on Twitter</button>
+      <button onclick="copyPublicLink()" class="share-btn copy">🔗 Copy Public Link</button>
+      <button onclick="exportChatPDF()" class="share-btn export">📄 Export as PDF</button>
+      <button onclick="saveChatHistory()" class="share-btn save">💾 Save Chat</button>
+    </div>
+    <div id="shareLinkDisplay" style="display: none; margin-top: 10px;">
+      <input type="text" id="shareLinkInput" readonly style="width: 70%; padding: 8px;">
+      <button onclick="copyLink()" style="width: 28%; padding: 8px;">Copy</button>
+    </div>
+  </div>
+
+  <textarea id="questionInput" placeholder="Ask your question about the content..."></textarea>
+  <button type="button" onclick="addMessage()">Ask</button>
+</div>
+
+<script>
+  let chatMessages = [];
+  let currentShareId = null;
+
+  document.querySelector("#uploadForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fileInput = document.querySelector("#fileUpload");
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+
+    const res = await fetch("/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await res.json();
+    document.getElementById("fileStatus").innerText = data.message || data.error;
+    if (data.message) {
+      document.getElementById("viralFeatures").style.display = "block";
+    }
+  });
+
+  document.querySelector("#urlForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const url = document.getElementById("urlInput").value;
+    const res = await fetch("/fetch-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+
+    const data = await res.json();
+    document.getElementById("fileStatus").innerText = data.message || data.error;
+    if (data.message) {
+      document.getElementById("viralFeatures").style.display = "block";
+    }
+  });
+
+  async function addMessage() {
+    const question = document.getElementById('questionInput').value;
+    if (!question.trim()) return;
+
+    const chat = document.getElementById('chatThread');
+    const userMsg = document.createElement('div');
+    userMsg.className = 'chat user';
+    userMsg.innerHTML = '<strong>You:</strong> ' + question;
+    chat.appendChild(userMsg);
+
+    chatMessages.push({ type: 'user', content: question });
+
+    const res = await fetch("/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question }),
+    });
+
+    const data = await res.json();
+    let answer = data.answer?.result || data.answer || data.error;
+
+    const botMsg = document.createElement('div');
+    botMsg.className = 'chat bot';
+    botMsg.innerHTML = '<strong>Bot:</strong> ' + answer;
+    chat.appendChild(botMsg);
+
+    chatMessages.push({ type: 'bot', content: answer });
+
+    document.getElementById('questionInput').value = '';
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  // Viral Growth Functions
+  function shareOnWhatsApp() {
+    const text = encodeURIComponent("Check out this AI Document Chatbot! " + window.location.href);
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  }
+
+  function shareOnLinkedIn() {
+    const url = encodeURIComponent(window.location.href);
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank');
+  }
+
+  function shareOnTwitter() {
+    const text = encodeURIComponent("Check out this AI Document Chatbot!");
+    const url = encodeURIComponent(window.location.href);
+    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+  }
+
+  async function copyPublicLink() {
+    if (!currentShareId) {
+      const res = await fetch("/api/save-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: chatMessages }),
+      });
+      const data = await res.json();
+      currentShareId = data.share_id;
+    }
+    const shareUrl = `${window.location.origin}/share/${currentShareId}`;
+    document.getElementById("shareLinkInput").value = shareUrl;
+    document.getElementById("shareLinkDisplay").style.display = "block";
+    copyLink();
+  }
+
+  function copyLink() {
+    const input = document.getElementById("shareLinkInput");
+    input.select();
+    document.execCommand("copy");
+    alert("Link copied to clipboard!");
+  }
+
+  async function exportChatPDF() {
+    const res = await fetch("/api/export-pdf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: chatMessages }),
+    });
+    const data = await res.json();
+    alert("PDF export feature coming soon!");
+  }
+
+  async function saveChatHistory() {
+    localStorage.setItem('chatHistory', JSON.stringify(chatMessages));
+    alert("Chat history saved locally!");
+  }
+</script>
+{% endblock %}
+
