@@ -16,7 +16,56 @@
 <!-- Feature Grid -->
 <section class="features-section">
   <div class="features-container">
-    <div class="feature-card" onclick="switchTab('resume'); document.getElementById('resume-tab').scrollIntoView({behavior: 'smooth'});">
+    <!-- PDF Summary AI -->
+    <div class="feature-card" onclick="window.location.href='/pdf-summary'">
+      <div class="feature-icon">📄</div>
+      <h3 class="feature-title">PDF Summary AI</h3>
+      <ul class="feature-list">
+        <li>Summarize long PDFs</li>
+        <li>Extract key insights</li>
+        <li>Highlight important sections</li>
+      </ul>
+      <button class="feature-btn">Try Now →</button>
+    </div>
+    
+    <!-- Invoice Reader -->
+    <div class="feature-card" onclick="window.location.href='/invoice-reader'">
+      <div class="feature-icon">🧾</div>
+      <h3 class="feature-title">Invoice Reader</h3>
+      <ul class="feature-list">
+        <li>Auto-extract items & prices</li>
+        <li>CSV export</li>
+        <li>Suspicious charge detection</li>
+      </ul>
+      <button class="feature-btn">Try Now →</button>
+    </div>
+    
+    <!-- Contract Analyzer -->
+    <div class="feature-card" onclick="window.location.href='/contract-analyzer'">
+      <div class="feature-icon">📑</div>
+      <h3 class="feature-title">Contract Analyzer</h3>
+      <ul class="feature-list">
+        <li>Clause breakdown</li>
+        <li>Risk & obligation detection</li>
+        <li>Missing clause identification</li>
+      </ul>
+      <button class="feature-btn">Try Now →</button>
+    </div>
+    
+    <!-- Salary Slip Analyzer -->
+    <div class="feature-card" onclick="window.location.href='/salary-slip'">
+      <div class="feature-icon">💰</div>
+      <h3 class="feature-title">Salary Slip Analyzer</h3>
+      <ul class="feature-list">
+        <li>Extract earnings & deductions</li>
+        <li>Payroll validation</li>
+        <li>Variance & anomalies</li>
+      </ul>
+      <button class="feature-btn">Try Now →</button>
+    </div>
+    
+    <!-- Resume Analyzer -->
+    <div class="feature-card" onclick="switchTab('resume'); setTimeout(() => document.getElementById('resume-tab').scrollIntoView({behavior: 'smooth'}), 100);">
       <div class="feature-icon">📄</div>
       <h3 class="feature-title">Resume Analyzer</h3>
       <ul class="feature-list">
@@ -27,7 +76,20 @@
       <button class="feature-btn">Try Now →</button>
     </div>
     
-    <div class="feature-card" onclick="switchTab('business'); document.getElementById('business-tab').scrollIntoView({behavior: 'smooth'});">
+    <!-- Website Summary -->
+    <div class="feature-card" onclick="window.location.href='/website-summary'">
+      <div class="feature-icon">🌐</div>
+      <h3 class="feature-title">Website Summary</h3>
+      <ul class="feature-list">
+        <li>Fetch webpage text</li>
+        <li>Generate structured summary</li>
+        <li>Extract key content automatically</li>
+      </ul>
+      <button class="feature-btn">Try Now →</button>
+    </div>
+    
+    <!-- Business Docs -->
+    <div class="feature-card" onclick="window.location.href='/business-docs-ai'">
       <div class="feature-icon">📊</div>
       <h3 class="feature-title">Business Docs</h3>
       <ul class="feature-list">
@@ -38,7 +100,8 @@
       <button class="feature-btn">Try Now →</button>
     </div>
     
-    <div class="feature-card" onclick="switchTab('edi'); document.getElementById('edi-tab').scrollIntoView({behavior: 'smooth'});">
+    <!-- EDI Validator -->
+    <div class="feature-card" onclick="switchTab('edi'); setTimeout(() => document.getElementById('edi-tab').scrollIntoView({behavior: 'smooth'}), 100);">
       <div class="feature-icon">🚢</div>
       <h3 class="feature-title">EDI Validator</h3>
       <ul class="feature-list">
@@ -49,8 +112,9 @@
       <button class="feature-btn">Try Now →</button>
     </div>
     
-    <div class="feature-card" onclick="switchTab('website'); document.getElementById('website-tab').scrollIntoView({behavior: 'smooth'});">
-      <div class="feature-icon">🌐</div>
+    <!-- Website Analyzer -->
+    <div class="feature-card" onclick="window.location.href='/website-analyzer'">
+      <div class="feature-icon">🔍</div>
       <h3 class="feature-title">Website Analyzer</h3>
       <ul class="feature-list">
         <li>SEO Score</li>

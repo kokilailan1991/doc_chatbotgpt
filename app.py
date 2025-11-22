@@ -89,66 +89,68 @@ def contact():
                          meta_description="Contact AIGPT Technologies for AI chatbots, automation tools, web development, and Navis TOS services.",
                          meta_keywords="contact AIGPT, AI chatbot services, automation tools")
 
-# Tool pages
+# Tool pages - Updated routes
+@app.route("/pdf-summary", methods=["GET"])
+def pdf_summary_page():
+    return render_template("pdf_summary.html",
+                         page_title="PDF Summary AI – Free AI Document Summarizer | AIGPT",
+                         meta_description="Upload any PDF and get instant AI-powered summary, key insights, risks, and action items. Free PDF analyzer with no login required.",
+                         meta_keywords="PDF summary, AI PDF analyzer, document summarizer, PDF insights, PDF risk analysis")
+
 @app.route("/tools/pdf-summary", methods=["GET"])
 def tool_pdf_summary():
-    return render_template("tool.html",
-                         tool_slug="pdf-summary",
-                         tool_name="PDF Summary AI",
-                         tool_description="AI-powered PDF summarization tool",
-                         page_title="PDF Summary AI - AI Document Chatbot",
-                         meta_description="AI-powered PDF summarization tool",
-                         meta_keywords="AI PDF reader, PDF summary, document AI, PDF analysis")
+    return pdf_summary_page()
+
+@app.route("/invoice-reader", methods=["GET"])
+def invoice_reader_page():
+    return render_template("invoice_reader.html",
+                         page_title="Invoice Reader AI – Free AI Invoice Extractor | AIGPT",
+                         meta_description="Extract invoice data automatically: items, quantities, prices, taxes, totals. Export to CSV. Free invoice analyzer with AI.",
+                         meta_keywords="invoice reader, invoice extractor, invoice OCR, invoice analyzer, invoice parser, AI invoice")
 
 @app.route("/tools/invoice-reader", methods=["GET"])
 def tool_invoice_reader():
-    return render_template("tool.html",
-                         tool_slug="invoice-reader",
-                         tool_name="Invoice Reader AI",
-                         tool_description="Extract and analyze invoice data with AI",
-                         page_title="Invoice Reader AI - AI Document Chatbot",
-                         meta_description="Extract and analyze invoice data with AI",
-                         meta_keywords="AI PDF reader, invoice reader, document AI, PDF analysis")
+    return invoice_reader_page()
+
+@app.route("/contract-analyzer", methods=["GET"])
+def contract_analyzer_page():
+    return render_template("contract_analyzer.html",
+                         page_title="Contract Analyzer AI – Free AI Contract Review | AIGPT",
+                         meta_description="Analyze contracts for clauses, obligations, risks, and missing terms. Informational only, not legal advice. Free contract analyzer.",
+                         meta_keywords="contract analyzer, contract review, contract analysis, legal document analyzer, contract clauses, AI contract")
 
 @app.route("/tools/contract-analyzer", methods=["GET"])
 def tool_contract_analyzer():
-    return render_template("tool.html",
-                         tool_slug="contract-analyzer",
-                         tool_name="Contract Analyzer AI",
-                         tool_description="Analyze contracts and legal documents with AI",
-                         page_title="Contract Analyzer AI - AI Document Chatbot",
-                         meta_description="Analyze contracts and legal documents with AI",
-                         meta_keywords="AI PDF reader, contract analyzer, document AI, PDF analysis")
+    return contract_analyzer_page()
+
+@app.route("/salary-slip", methods=["GET"])
+def salary_slip_page():
+    return render_template("salary_slip.html",
+                         page_title="Salary Slip Analyzer – Free AI Payroll Analyzer | AIGPT",
+                         meta_description="Extract payroll data: Basic, HRA, PF, deductions, net pay. Find mistakes and tax flags. Free salary slip analyzer.",
+                         meta_keywords="salary slip analyzer, payroll analyzer, salary checker, payroll extractor, AI salary slip")
 
 @app.route("/tools/salary-slip-analyzer", methods=["GET"])
 def tool_salary_slip():
-    return render_template("tool.html",
-                         tool_slug="salary-slip-analyzer",
-                         tool_name="Salary Slip Analyzer",
-                         tool_description="Analyze salary slips and payroll documents",
-                         page_title="Salary Slip Analyzer - AI Document Chatbot",
-                         meta_description="Analyze salary slips and payroll documents",
-                         meta_keywords="AI PDF reader, salary slip analyzer, document AI, PDF analysis")
+    return salary_slip_page()
 
 @app.route("/tools/resume-analyzer", methods=["GET"])
 def tool_resume_analyzer():
-    return render_template("tool.html",
-                         tool_slug="resume-analyzer",
-                         tool_name="Resume Analyzer AI",
-                         tool_description="Analyze resumes and CVs with AI",
-                         page_title="Resume Analyzer AI - AI Document Chatbot",
-                         meta_description="Analyze resumes and CVs with AI",
-                         meta_keywords="AI PDF reader, resume analyzer, document AI, PDF analysis")
+    return render_template("resume_analyzer_seo.html",
+                         page_title="Resume Analyzer AI – Free ATS Score & JD Match | AIGPT",
+                         meta_description="Analyze your resume with AI. Get ATS score, rewrite, JD match, and improvements instantly. Free resume checker.",
+                         meta_keywords="resume analyzer, ATS score, resume checker, JD match, resume optimization")
+
+@app.route("/website-summary", methods=["GET"])
+def website_summary_page():
+    return render_template("website_summary.html",
+                         page_title="Website-to-Summary AI – Free Website Summarizer | AIGPT",
+                         meta_description="Convert any website into a concise summary with key sections, missing content, and purpose clarity. Free website summarizer.",
+                         meta_keywords="website summary, website summarizer, URL summarizer, website content extractor, AI website summary")
 
 @app.route("/tools/website-summary", methods=["GET"])
 def tool_website_summary():
-    return render_template("tool.html",
-                         tool_slug="website-summary",
-                         tool_name="Website-to-Summary AI",
-                         tool_description="Convert websites into summaries with AI",
-                         page_title="Website-to-Summary AI - AI Document Chatbot",
-                         meta_description="Convert websites into summaries with AI",
-                         meta_keywords="AI PDF reader, website summary, document AI, PDF analysis")
+    return website_summary_page()
 
 # Share and export endpoints
 @app.route("/share/<share_id>", methods=["GET"])

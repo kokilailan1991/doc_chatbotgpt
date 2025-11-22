@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="main-content-wrapper">
+  <div class="tool-header">
+    <h1 class="tool-title">🌐 Website-to-Summary AI</h1>
+    <p class="tool-subtitle">Convert any website into a concise summary with key sections, missing content, and purpose clarity.</p>
+  </div>
+
+  <button onclick="trySampleWebsite()" class="demo-btn-large">✨ Try Sample Website</button>
+
+  <div class="upload-card">
+    <h3 class="upload-header">Enter Website URL</h3>
+    <form id="urlForm">
+      <label class="upload-label">Website URL:</label>
+      <input type="url" id="urlInput" placeholder="https://example.com" class="url-input" />
+      <button type="submit" class="upload-btn">Summarize Website</button>
+    </form>
+  </div>
+
+  <div id="websiteStatus" class="status-message"></div>
+
+  <div class="workflow-actions" id="websiteActions" style="display: none;">
+    <button onclick="getSummary()" class="workflow-btn">Get Summary</button>
+    <button onclick="shareResult()" class="workflow-btn share">Share Result</button>
+    <button onclick="copyResult()" class="workflow-btn copy">Copy Result</button>
+  </div>
+
+  <div id="websiteResults" class="results-section"></div>
+</div>
+
+<script>
+document.getElementById("urlForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const url = document.getElementById("urlInput").value;
+  if (!url) {
+    document.getElementById("websiteStatus").innerHTML = '<div class="error-message">Please enter a URL</div>';
+    return;
+  }
+  
+  document.getElementById("websiteStatus").innerHTML = '<div class="loading">⏳ Fetching and summarizing website...</div>';
+  document.getElementById("websiteResults").innerHTML = "";
+  
+  try {
+    const fetchRes = await fetch("/fetch-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url })
+    });
+    const fetchData = await fetchRes.json();
+    
+    if (fetchData.message) {
+      document.getElementById("websiteStatus").innerHTML = '<div class="success-message">✅ ' + fetchData.message + '</div>';
+      document.getElementById("websiteActions").style.display = "flex";
+    } else {
+      document.getElementById("websiteStatus").innerHTML = '<div class="error-message">❌ ' + fetchData.error + '</div>';
+    }
+  } catch (error) {
+    document.getElementById("websiteStatus").innerHTML = '<div class="error-message">❌ Error: ' + error.message + '</div>';
+  }
+});
+
+async function getSummary() {
+  document.getElementById("websiteResults").innerHTML = '<div class="loading">⏳ Generating summary...</div>';
+  try {
+    const res = await fetch("/api/workflow/summary", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "executive" })
+    });
+    const summaryData = await res.json();
+    
+    const insightsRes = await fetch("/api/workflow/extract-insights", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ document_type: "website" })
+    });
+    const insights = await insightsRes.json();
+    
+    const data = {
+      executiveSummary: summaryData.summary || "",
+      keySections: insights.keyFindings || [],
+      missingContent: insights.issues || [],
+      purposeClarity: insights.opportunities || []
+    };
+    
+    displayWebsiteSummaryResults("websiteResults", data);
+    document.getElementById("websiteResults").scrollIntoView({ behavior: 'smooth' });
+  } catch (error) {
+    document.getElementById("websiteResults").innerHTML = '<div class="error-message">❌ Error: ' + error.message + '</div>';
+  }
+}
+
+async function trySampleWebsite() {
+  const url = "https://aigpt.co.in";
+  document.getElementById("urlInput").value = url;
+  document.getElementById("websiteStatus").innerHTML = '<div class="loading">⏳ Loading sample website...</div>';
+  
+  try {
+    const fetchRes = await fetch("/fetch-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url })
+    });
+    const fetchData = await fetchRes.json();
+    
+    if (fetchData.message) {
+      document.getElementById("websiteStatus").innerHTML = '<div class="success-message">✅ Sample website loaded!</div>';
+      document.getElementById("websiteActions").style.display = "flex";
+      getSummary();
+    }
+  } catch (error) {
+    document.getElementById("websiteStatus").innerHTML = '<div class="error-message">❌ Error: ' + error.message + '</div>';
+  }
+}
+
+function displayWebsiteSummaryResults(containerId, data) {
+  const container = document.getElementById(containerId);
+  let html = '<div class="result-card fade-in"><h3 class="result-header">🌐 Website Summary</h3>';
+  
+  if (data.executiveSummary) {
+    html += '<div class="result-section"><h4>📝 Executive Summary:</h4><p>' + data.executiveSummary + '</p></div>';
+  }
+  
+  if (data.keySections && data.keySections.length > 0) {
+    html += '<div class="result-section suggestion-card"><h4>📑 Key Sections:</h4><ul>';
+    data.keySections.forEach(section => html += '<li>' + section + '</li>');
+    html += '</ul></div>';
+  }
+  
+  if (data.missingContent && data.missingContent.length > 0) {
+    html += '<div class="result-section warning-card"><h4>❌ Missing Content:</h4><ul>';
+    data.missingContent.forEach(missing => html += '<li>' + missing + '</li>');
+    html += '</ul></div>';
+  }
+  
+  if (data.purposeClarity && data.purposeClarity.length > 0) {
+    html += '<div class="result-section suggestion-card"><h4>💡 Page Purpose Clarity:</h4><ul>';
+    data.purposeClarity.forEach(clarity => html += '<li>' + clarity + '</li>');
+    html += '</ul></div>';
+  }
+  
+  html += '<details class="result-section"><summary>View Full JSON</summary><pre class="result-json">' + JSON.stringify(data, null, 2) + '</pre></details>';
+  html += '<button onclick="copyResult()" class="copy-btn">📋 Copy Result</button></div>';
+  
+  container.innerHTML = html;
+}
+
+function shareResult() {
+  const shareUrl = window.location.href;
+  if (navigator.share) {
+    navigator.share({ title: "Website Summary", url: shareUrl });
+  } else {
+    navigator.clipboard.writeText(shareUrl);
+    alert("Link copied to clipboard!");
+  }
+}
+
+function copyResult() {
+  const results = document.querySelectorAll('.result-card pre');
+  if (results.length > 0) {
+    navigator.clipboard.writeText(results[0].innerText);
+    alert("Results copied to clipboard!");
+  }
+}
+</script>
+{% endblock %}
+

@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="main-content-wrapper">
+  <div class="tool-header">
+    <h1 class="tool-title">📄 PDF Summary AI</h1>
+    <p class="tool-subtitle">Upload any PDF and get instant AI-powered summary, key insights, risks, and action items.</p>
+  </div>
+
+  <button onclick="trySamplePDF()" class="demo-btn-large">✨ Try Sample PDF</button>
+
+  <div class="upload-card">
+    <h3 class="upload-header">Upload PDF Document</h3>
+    <form id="pdfUploadForm" enctype="multipart/form-data">
+      <label class="upload-label">Select PDF File:</label>
+      <input type="file" id="pdfFile" accept=".pdf" class="file-input" />
+      <button type="submit" class="upload-btn">Upload & Analyze</button>
+    </form>
+    
+    <div class="sample-links">
+      <a href="#" onclick="trySamplePDF(); return false;">Try Sample PDF</a>
+    </div>
+  </div>
+
+  <div id="pdfStatus" class="status-message"></div>
+
+  <div class="workflow-actions" id="pdfActions" style="display: none;">
+    <button onclick="getSummary()" class="workflow-btn">Get Summary</button>
+    <button onclick="getInsights()" class="workflow-btn">Key Insights</button>
+    <button onclick="getRisks()" class="workflow-btn">Risks & Red Flags</button>
+    <button onclick="getActionItems()" class="workflow-btn">Action Items</button>
+    <button onclick="shareResult()" class="workflow-btn share">Share Result</button>
+    <button onclick="copyResult()" class="workflow-btn copy">Copy Result</button>
+  </div>
+
+  <div id="pdfResults" class="results-section"></div>
+</div>
+
+<script>
+document.getElementById("pdfUploadForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const file = document.getElementById("pdfFile").files[0];
+  if (!file) {
+    document.getElementById("pdfStatus").innerHTML = '<div class="error-message">Please select a PDF file</div>';
+    return;
+  }
+  
+  const formData = new FormData();
+  formData.append("file", file);
+  
+  document.getElementById("pdfStatus").innerHTML = '<div class="loading">⏳ Uploading and processing PDF...</div>';
+  
+  try {
+    const res = await fetch("/upload", { method: "POST", body: formData });
+    const data = await res.json();
+    
+    if (data.message) {
+      document.getElementById("pdfStatus").innerHTML = '<div class="success-message">✅ ' + data.message + '</div>';
+      document.getElementById("pdfActions").style.display = "flex";
+    } else {
+      document.getElementById("pdfStatus").innerHTML = '<div class="error-message">❌ ' + data.error + '</div>';
+    }
+  } catch (error) {
+    document.getElementById("pdfStatus").innerHTML = '<div class="error-message">❌ Error: ' + error.message + '</div>';
+  }
+});
+
+async function getSummary() {
+  document.getElementById("pdfResults").innerHTML = '<div class="loading">⏳ Generating summary...</div>';
+  try {
+    const res = await fetch("/api/workflow/summary", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "executive" })
+    });
+    const data = await res.json();
+    displayPDFResults("pdfResults", data, "summary");
+    document.getElementById("pdfResults").scrollIntoView({ behavior: 'smooth' });
+  } catch (error) {
+    document.getElementById("pdfResults").innerHTML = '<div class="error-message">❌ Error: ' + error.message + '</div>';
+  }
+}
+
+async function getInsights() {
+  document.getElementById("pdfResults").innerHTML = '<div class="loading">⏳ Extracting insights...</div>';
+  try {
+    const res = await fetch("/api/workflow/extract-insights", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ document_type: "general" })
+    });
+    const data = await res.json();
+    displayPDFResults("pdfResults", data, "insights");
+    document.getElementById("pdfResults").scrollIntoView({ behavior: 'smooth' });
+  } catch (error) {
+    document.getElementById("pdfResults").innerHTML = '<div class="error-message">❌ Error: ' + error.message + '</div>';
+  }
+}
+
+async function getRisks() {
+  document.getElementById("pdfResults").innerHTML = '<div class="loading">⏳ Analyzing risks...</div>';
+  try {
+    const res = await fetch("/api/workflow/risk-analysis", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    });
+    const data = await res.json();
+    displayPDFResults("pdfResults", data, "risks");
+    document.getElementById("pdfResults").scrollIntoView({ behavior: 'smooth' });
+  } catch (error) {
+    document.getElementById("pdfResults").innerHTML = '<div class="error-message">❌ Error: ' + error.message + '</div>';
+  }
+}
+
+async function getActionItems() {
+  document.getElementById("pdfResults").innerHTML = '<div class="loading">⏳ Generating action items...</div>';
+  try {
+    const res = await fetch("/api/workflow/action-items", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    });
+    const data = await res.json();
+    displayPDFResults("pdfResults", data, "actions");
+    document.getElementById("pdfResults").scrollIntoView({ behavior: 'smooth' });
+  } catch (error) {
+    document.getElementById("pdfResults").innerHTML = '<div class="error-message">❌ Error: ' + error.message + '</div>';
+  }
+}
+
+async function trySamplePDF() {
+  document.getElementById("pdfResults").innerHTML = '<div class="loading">⏳ Loading sample PDF analysis...</div>';
+  // Simulate sample data
+  const sampleData = {
+    summary: "This is a sample PDF summary demonstrating the AI's ability to extract key information, identify risks, and generate actionable insights.",
+    keyInsights: [
+      "Document contains important financial data",
+      "Multiple stakeholders involved",
+      "Timeline-sensitive information present"
+    ],
+    risks: [
+      "Confidential information requires protection",
+      "Deadline approaching requires immediate action"
+    ],
+    actionItems: [
+      "Review financial figures",
+      "Schedule stakeholder meeting",
+      "Prepare response document"
+    ]
+  };
+  displayPDFResults("pdfResults", sampleData, "full");
+  document.getElementById("pdfStatus").innerHTML = '<div class="success-message">✅ Sample PDF analysis loaded!</div>';
+  document.getElementById("pdfActions").style.display = "flex";
+}
+
+function displayPDFResults(containerId, data, type) {
+  const container = document.getElementById(containerId);
+  let html = '<div class="result-card fade-in"><h3 class="result-header">📄 PDF Analysis Results</h3>';
+  
+  if (type === "summary" || type === "full") {
+    html += '<div class="result-section"><h4>📝 Summary:</h4><p>' + (data.summary || "No summary available") + '</p></div>';
+  }
+  
+  if (type === "insights" || type === "full") {
+    const insights = data.keyInsights || data.keyFindings || [];
+    if (insights.length > 0) {
+      html += '<div class="result-section suggestion-card"><h4>💡 Key Insights:</h4><ul>';
+      insights.forEach(insight => html += '<li>' + insight + '</li>');
+      html += '</ul></div>';
+    }
+  }
+  
+  if (type === "risks" || type === "full") {
+    const risks = data.risks || [];
+    if (risks.length > 0) {
+      html += '<div class="result-section error-card"><h4>⚠️ Risks & Red Flags:</h4><ul>';
+      risks.forEach(risk => html += '<li>' + risk + '</li>');
+      html += '</ul></div>';
+    }
+  }
+  
+  if (type === "actions" || type === "full") {
+    const actions = data.actionItems || [];
+    if (actions.length > 0) {
+      html += '<div class="result-section suggestion-card"><h4>✅ Action Items:</h4><ul>';
+      actions.forEach(action => html += '<li>' + action + '</li>');
+      html += '</ul></div>';
+    }
+  }
+  
+  html += '<details class="result-section"><summary>View Full JSON</summary><pre class="result-json">' + JSON.stringify(data, null, 2) + '</pre></details>';
+  html += '<button onclick="copyResult()" class="copy-btn">📋 Copy Result</button></div>';
+  
+  container.innerHTML = html;
+}
+
+function shareResult() {
+  const shareUrl = window.location.href;
+  if (navigator.share) {
+    navigator.share({ title: "PDF Analysis", url: shareUrl });
+  } else {
+    navigator.clipboard.writeText(shareUrl);
+    alert("Link copied to clipboard!");
+  }
+}
+
+function copyResult() {
+  const results = document.querySelectorAll('.result-card pre');
+  if (results.length > 0) {
+    navigator.clipboard.writeText(results[0].innerText);
+    alert("Results copied to clipboard!");
+  }
+}
+</script>
+
+<style>
+.tool-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding: 2rem 0;
+}
+
+.tool-title {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, #6C5DD3 0%, #3E98FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.tool-subtitle {
+  font-size: 1.25rem;
+  color: #666;
+  max-width: 700px;
+  margin: 0 auto;
+}
+</style>
+{% endblock %}
+
