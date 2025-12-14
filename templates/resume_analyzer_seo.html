@@ -8,7 +8,48 @@
 {% block og_description %}Analyze your resume with AI. Get ATS score, rewrite, JD match, and improvements instantly.{% endblock %}
 
 {% block content %}
-<div class="seo-page-container">
+<div class="main-content-wrapper">
+  <div class="tool-header">
+    <h1 class="tool-title">📄 Resume Analyzer AI</h1>
+    <p class="tool-subtitle">Get ATS score, match with job descriptions, and get AI-powered improvements.</p>
+  </div>
+
+  <button onclick="tryDemo()" class="demo-btn-large">✨ Try Example Resume</button>
+
+  <div class="upload-card">
+    <h3 class="upload-header">Upload Your Resume</h3>
+    <form id="resumeUploadForm" enctype="multipart/form-data">
+      <label class="upload-label">Select Resume (PDF):</label>
+      <input type="file" id="resumeFile" accept=".pdf" class="file-input" />
+      <button type="submit" class="upload-btn">Upload Resume</button>
+    </form>
+  </div>
+
+  <div class="upload-card" style="margin-top: 2rem;">
+    <h3 class="upload-header">Upload Job Description (Optional)</h3>
+    <form id="jdUploadForm" enctype="multipart/form-data">
+      <label class="upload-label">Select Job Description (PDF):</label>
+      <input type="file" id="jdFile" accept=".pdf" class="file-input" />
+      <button type="submit" class="upload-btn">Upload JD</button>
+    </form>
+  </div>
+
+  <div id="status" class="status-message"></div>
+
+  <div class="workflow-actions" id="actions" style="display: none;">
+    <button onclick="getATSScore()" class="workflow-btn">Get ATS Score</button>
+    <button onclick="matchWithJD()" class="workflow-btn">Match with JD</button>
+    <button onclick="getFullReport()" class="workflow-btn">Full Report</button>
+    <button onclick="rewriteResume()" class="workflow-btn">Rewrite Resume</button>
+    <button onclick="shareResult()" class="workflow-btn share">Share Result</button>
+    <button onclick="copyResult()" class="workflow-btn copy">Copy Result</button>
+  </div>
+
+  <div id="results" class="results-section"></div>
+  <div id="demoResults" class="results-section"></div>
+</div>
+
+<div class="seo-page-container" style="margin-top: 4rem;">
   <div class="seo-header">
     <h1>AI Resume Analyzer – Free ATS Score & JD Match</h1>
     <p class="seo-subtitle">Get instant AI-powered resume analysis with ATS scoring, grammar fixes, skill gap analysis, and JD matching. No login required.</p>
@@ -73,12 +114,6 @@
     <p>Unlike generic resume checkers, our AI provides actionable insights and specific recommendations. You'll get a detailed breakdown of strengths and weaknesses, along with a rewritten resume that incorporates all improvements.</p>
   </section>
 
-  <!-- Demo Section -->
-  <section class="seo-section">
-    <h2>Try Example Resume</h2>
-    <button onclick="tryDemo()" class="demo-btn">Try Example Resume</button>
-    <div id="demoResults" class="demo-results"></div>
-  </section>
 
   <!-- FAQ -->
   <section class="seo-section">
@@ -115,26 +150,6 @@
     </div>
   </section>
 
-  <!-- Tool Interface -->
-  <section class="seo-section">
-    <h2>Start Analyzing Your Resume</h2>
-    <div class="tool-interface">
-      <form id="resumeUploadForm" enctype="multipart/form-data">
-        <label>Upload Your Resume:</label>
-        <input type="file" id="resumeFile" accept=".pdf" />
-        <button type="submit">Upload & Analyze</button>
-      </form>
-
-      <form id="jdUploadForm" enctype="multipart/form-data" style="margin-top: 15px;">
-        <label>Upload Job Description (Optional):</label>
-        <input type="file" id="jdFile" accept=".pdf" />
-        <button type="submit">Upload JD</button>
-      </form>
-
-      <div id="status" class="status-message"></div>
-      <div id="results" class="results-container"></div>
-    </div>
-  </section>
 </div>
 
 <script type="application/ld+json">
@@ -181,35 +196,269 @@
 
 <script>
 async function tryDemo() {
-  const res = await fetch("/api/demo/resume");
-  const data = await res.json();
-  document.getElementById("demoResults").innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+  document.getElementById("demoResults").innerHTML = '<div class="loading">⏳ Loading example resume...</div>';
+  try {
+    const res = await fetch("/api/demo/resume");
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      document.getElementById("demoResults").innerHTML = '<div class="error-message">❌ ' + (errorData.error || `Server error: ${res.status}`) + '</div>';
+      return;
+    }
+    
+    const data = await res.json();
+    
+    if (data.error) {
+      document.getElementById("demoResults").innerHTML = '<div class="error-message">❌ ' + data.error + '</div>';
+    } else {
+      document.getElementById("demoResults").innerHTML = `<div class="result-card"><pre class="result-json">${JSON.stringify(data, null, 2)}</pre></div>`;
+    }
+  } catch (error) {
+    document.getElementById("demoResults").innerHTML = '<div class="error-message">❌ Error: ' + error.message + '</div>';
+  }
 }
 
 document.getElementById("resumeUploadForm").addEventListener("submit", async (e) => {
   e.preventDefault();
+  const file = document.getElementById("resumeFile").files[0];
+  if (!file) {
+    document.getElementById("status").innerHTML = '<div class="error-message">Please select a resume file</div>';
+    return;
+  }
+  
   const formData = new FormData();
-  formData.append("file", document.getElementById("resumeFile").files[0]);
+  formData.append("file", file);
   formData.append("file_id", "active");
   
-  const res = await fetch("/api/upload-multi", { method: "POST", body: formData });
-  const data = await res.json();
-  document.getElementById("status").innerText = data.message || data.error;
+  document.getElementById("status").innerHTML = '<div class="loading">⏳ Uploading and processing resume...</div>';
   
-  if (data.message) {
-    const reportRes = await fetch("/api/resume/full-report", {
+  try {
+    const res = await fetch("/api/upload-multi", { method: "POST", body: formData });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      document.getElementById("status").innerHTML = '<div class="error-message">❌ ' + (errorData.error || `Server error: ${res.status}`) + '</div>';
+      return;
+    }
+    
+    const data = await res.json();
+    
+    if (data.error) {
+      document.getElementById("status").innerHTML = '<div class="error-message">❌ ' + data.error + '</div>';
+    } else if (data.message) {
+      document.getElementById("status").innerHTML = '<div class="success-message">✅ ' + data.message + '</div>';
+      document.getElementById("actions").style.display = "flex";
+    } else {
+      document.getElementById("status").innerHTML = '<div class="error-message">❌ Unexpected response format</div>';
+    }
+  } catch (error) {
+    document.getElementById("status").innerHTML = '<div class="error-message">❌ Error: ' + error.message + '</div>';
+  }
+});
+
+document.getElementById("jdUploadForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const file = document.getElementById("jdFile").files[0];
+  if (!file) {
+    document.getElementById("status").innerHTML += '<div class="error-message">Please select a job description file</div>';
+    return;
+  }
+  
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("file_id", "jd");
+  
+  const currentStatus = document.getElementById("status").innerHTML;
+  document.getElementById("status").innerHTML = currentStatus + '<div class="loading">⏳ Uploading job description...</div>';
+  
+  try {
+    const res = await fetch("/api/upload-multi", { method: "POST", body: formData });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      document.getElementById("status").innerHTML += '<div class="error-message">❌ ' + (errorData.error || `Server error: ${res.status}`) + '</div>';
+      return;
+    }
+    
+    const data = await res.json();
+    
+    if (data.error) {
+      document.getElementById("status").innerHTML += '<div class="error-message">❌ ' + data.error + '</div>';
+    } else if (data.message) {
+      document.getElementById("status").innerHTML += '<div class="success-message">✅ ' + data.message + '</div>';
+    } else {
+      document.getElementById("status").innerHTML += '<div class="error-message">❌ Unexpected response format</div>';
+    }
+  } catch (error) {
+    document.getElementById("status").innerHTML += '<div class="error-message">❌ Error: ' + error.message + '</div>';
+  }
+});
+
+async function getATSScore() {
+  document.getElementById("results").innerHTML = '<div class="loading">⏳ Calculating ATS score...</div>';
+  try {
+    const res = await fetch("/api/resume/ats-score", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({})
     });
-    const reportData = await reportRes.json();
-    displayResults(reportData);
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      document.getElementById("results").innerHTML = '<div class="error-message">❌ ' + (errorData.error || `Server error: ${res.status}`) + '</div>';
+      return;
+    }
+    
+    const data = await res.json();
+    displayResults(data);
+    document.getElementById("results").scrollIntoView({ behavior: 'smooth' });
+  } catch (error) {
+    document.getElementById("results").innerHTML = '<div class="error-message">❌ Error: ' + error.message + '</div>';
   }
-});
+}
+
+async function matchWithJD() {
+  document.getElementById("results").innerHTML = '<div class="loading">⏳ Matching with job description...</div>';
+  try {
+    const res = await fetch("/api/resume/match-jd", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jd_file_id: "jd" })
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      document.getElementById("results").innerHTML = '<div class="error-message">❌ ' + (errorData.error || `Server error: ${res.status}`) + '</div>';
+      return;
+    }
+    
+    const data = await res.json();
+    displayResults(data);
+    document.getElementById("results").scrollIntoView({ behavior: 'smooth' });
+  } catch (error) {
+    document.getElementById("results").innerHTML = '<div class="error-message">❌ Error: ' + error.message + '</div>';
+  }
+}
+
+async function getFullReport() {
+  document.getElementById("results").innerHTML = '<div class="loading">⏳ Generating full report...</div>';
+  try {
+    const res = await fetch("/api/resume/full-report", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jd_file_id: "jd" })
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      document.getElementById("results").innerHTML = '<div class="error-message">❌ ' + (errorData.error || `Server error: ${res.status}`) + '</div>';
+      return;
+    }
+    
+    const data = await res.json();
+    displayResults(data);
+    document.getElementById("results").scrollIntoView({ behavior: 'smooth' });
+  } catch (error) {
+    document.getElementById("results").innerHTML = '<div class="error-message">❌ Error: ' + error.message + '</div>';
+  }
+}
+
+async function rewriteResume() {
+  document.getElementById("results").innerHTML = '<div class="loading">⏳ Rewriting resume...</div>';
+  try {
+    const res = await fetch("/api/resume/rewrite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ improvements: [] })
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      document.getElementById("results").innerHTML = '<div class="error-message">❌ ' + (errorData.error || `Server error: ${res.status}`) + '</div>';
+      return;
+    }
+    
+    const data = await res.json();
+    displayResults(data);
+    document.getElementById("results").scrollIntoView({ behavior: 'smooth' });
+  } catch (error) {
+    document.getElementById("results").innerHTML = '<div class="error-message">❌ Error: ' + error.message + '</div>';
+  }
+}
 
 function displayResults(data) {
   const container = document.getElementById("results");
-  container.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+  
+  if (data.error) {
+    container.innerHTML = '<div class="error-message">❌ ' + data.error + '</div>';
+    return;
+  }
+  
+  let html = '<div class="result-card fade-in"><h3 class="result-header">📄 Resume Analysis Results</h3>';
+  
+  // Display ATS Score if available
+  if (data.atsScore !== undefined) {
+    const score = data.atsScore;
+    const scoreColor = score >= 80 ? '#28a745' : score >= 60 ? '#ffc107' : '#dc3545';
+    html += `<div class="result-section"><h4>📊 ATS Score:</h4><p style="font-size: 2rem; font-weight: bold; color: ${scoreColor};">${score}/100</p></div>`;
+  }
+  
+  // Display breakdown if available
+  if (data.breakdown) {
+    html += '<div class="result-section"><h4>📋 Score Breakdown:</h4><ul>';
+    for (const [key, value] of Object.entries(data.breakdown)) {
+      html += `<li><strong>${key}:</strong> ${value}</li>`;
+    }
+    html += '</ul></div>';
+  }
+  
+  // Display match analysis if available
+  if (data.matchAnalysis) {
+    html += '<div class="result-section suggestion-card"><h4>🎯 Match Analysis:</h4><p>' + data.matchAnalysis + '</p></div>';
+  }
+  
+  // Display improvements if available
+  if (data.improvements && data.improvements.length > 0) {
+    html += '<div class="result-section suggestion-card"><h4>💡 Suggested Improvements:</h4><ul>';
+    data.improvements.forEach(improvement => {
+      if (typeof improvement === 'string') {
+        html += '<li>' + improvement + '</li>';
+      } else if (improvement.suggestion) {
+        html += '<li><strong>' + improvement.category + ':</strong> ' + improvement.suggestion + '</li>';
+      } else {
+        html += '<li>' + JSON.stringify(improvement) + '</li>';
+      }
+    });
+    html += '</ul></div>';
+  }
+  
+  // Display rewritten resume if available
+  if (data.rewrittenResume) {
+    html += '<div class="result-section"><h4>✍️ Rewritten Resume:</h4><pre class="result-json">' + data.rewrittenResume + '</pre></div>';
+  }
+  
+  html += '<details class="result-section"><summary>View Full JSON</summary><pre class="result-json">' + JSON.stringify(data, null, 2) + '</pre></details>';
+  html += '<button onclick="copyResult()" class="copy-btn">📋 Copy Result</button></div>';
+  
+  container.innerHTML = html;
+}
+
+function shareResult() {
+  const shareUrl = window.location.href;
+  if (navigator.share) {
+    navigator.share({ title: "Resume Analysis", url: shareUrl });
+  } else {
+    navigator.clipboard.writeText(shareUrl);
+    alert("Link copied to clipboard!");
+  }
+}
+
+function copyResult() {
+  const results = document.querySelectorAll('.result-card pre');
+  if (results.length > 0) {
+    navigator.clipboard.writeText(results[0].innerText);
+    alert("Results copied to clipboard!");
+  }
 }
 </script>
 {% endblock %}
