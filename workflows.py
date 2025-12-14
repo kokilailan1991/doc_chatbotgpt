@@ -36,7 +36,7 @@ class WorkflowProcessor:
         template = """Analyze the following document and extract key insights in JSON format.
         
 Document Type: {document_type}
-Context: {context}
+Context: {{context}}
 
 Extract and return a JSON object with:
 - keyEntities: [list of important entities, people, companies, dates]
@@ -49,7 +49,9 @@ Extract and return a JSON object with:
 Return ONLY valid JSON, no additional text.
 """
         
-        chain = self._create_chain(template.format(document_type=document_type), retriever)
+        # Format document_type, then replace double braces with single for context
+        formatted_template = template.format(document_type=document_type).replace("{{context}}", "{context}")
+        chain = self._create_chain(formatted_template, retriever)
         result = chain.invoke("Extract insights")
         
         try:
@@ -128,7 +130,7 @@ Summary:"""
         template = """Based on the following document, create an email draft.
         
 Email Type: {email_type}
-Context: {context}
+Context: {{context}}
 
 Return a JSON object with:
 - subject: email subject line
@@ -138,7 +140,9 @@ Return a JSON object with:
 Return ONLY valid JSON, no additional text.
 """
         
-        chain = self._create_chain(template.format(email_type=email_type), retriever)
+        # Format email_type, then replace double braces with single for context
+        formatted_template = template.format(email_type=email_type).replace("{{context}}", "{context}")
+        chain = self._create_chain(formatted_template, retriever)
         result = chain.invoke("Generate email")
         
         try:
@@ -233,5 +237,10 @@ Return ONLY valid JSON, no additional text.
             "differences": [result],
             "recommendations": []
         }
+
+
+
+
+
 
 
