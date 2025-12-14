@@ -2,126 +2,368 @@
 
 {% block content %}
 <!-- Hero Section -->
-<section class="hero-section">
-  <div class="hero-container">
-    <h1 class="hero-headline">Your AI Document Analyst</h1>
-    <p class="hero-subheadline">Analyze resumes, invoices, contracts, EDI files, and websites with instant AI insights. Free. No login needed.</p>
-    <div class="hero-ctas">
-      <a href="#resume-tab" onclick="switchTab('resume'); return false;" class="hero-btn hero-btn-primary">Try Resume Analyzer</a>
-      <a href="#edi-tab" onclick="switchTab('edi'); return false;" class="hero-btn hero-btn-secondary">Try Logistics EDI Validator</a>
+<section class="hero-section-new">
+  <div class="hero-container-new">
+    <div class="hero-badge">✨ Powered by Advanced AI</div>
+    <h1 class="hero-headline-new">Transform Documents into Actionable Intelligence</h1>
+    <p class="hero-subheadline-new">Analyze resumes, contracts, invoices, EDI files, and websites with cutting-edge AI. Get instant insights, risk assessments, and recommendations—all in seconds. No login required. Completely free.</p>
+    <div class="hero-ctas-new">
+      <a href="#tools" class="hero-btn-new hero-btn-primary-new">Explore All Tools</a>
+      <a href="#how-it-works" class="hero-btn-new hero-btn-secondary-new">See How It Works</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <div class="stat-number">9+</div>
+        <div class="stat-label">AI Tools</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">100%</div>
+        <div class="stat-label">Free Forever</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">Instant</div>
+        <div class="stat-label">Results</div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- Feature Grid -->
-<section class="features-section">
-  <div class="features-container">
-    <!-- PDF Summary AI -->
-    <div class="feature-card" onclick="window.location.href='/pdf-summary'">
-      <div class="feature-icon">📄</div>
-      <h3 class="feature-title">PDF Summary AI</h3>
-      <ul class="feature-list">
-        <li>Summarize long PDFs</li>
-        <li>Extract key insights</li>
-        <li>Highlight important sections</li>
-      </ul>
-      <button class="feature-btn">Try Now →</button>
+<!-- Tools Grid Section -->
+<section class="tools-section" id="tools">
+  <div class="section-container">
+    <div class="section-header">
+      <h2 class="section-title">Powerful AI Tools for Every Document Type</h2>
+      <p class="section-description">Choose from our comprehensive suite of AI-powered document analysis tools</p>
     </div>
-    
-    <!-- Invoice Reader -->
-    <div class="feature-card" onclick="window.location.href='/invoice-reader'">
-      <div class="feature-icon">🧾</div>
-      <h3 class="feature-title">Invoice Reader</h3>
-      <ul class="feature-list">
-        <li>Auto-extract items & prices</li>
-        <li>CSV export</li>
-        <li>Suspicious charge detection</li>
-      </ul>
-      <button class="feature-btn">Try Now →</button>
+    <div class="tools-grid">
+      <!-- PDF Summary AI -->
+      <div class="tool-card-new" onclick="window.location.href='/pdf-summary'">
+        <div class="tool-icon-new">📄</div>
+        <h3 class="tool-title-new">PDF Summary AI</h3>
+        <p class="tool-description-new">Instantly summarize long PDF documents, extract key insights, and highlight critical sections with AI-powered analysis.</p>
+        <div class="tool-features-new">
+          <span class="tool-feature-tag">Smart Summarization</span>
+          <span class="tool-feature-tag">Key Insights</span>
+          <span class="tool-feature-tag">Risk Detection</span>
+        </div>
+        <button class="tool-btn-new">Try Now →</button>
+      </div>
+      
+      <!-- Invoice Reader -->
+      <div class="tool-card-new" onclick="window.location.href='/invoice-reader'">
+        <div class="tool-icon-new">🧾</div>
+        <h3 class="tool-title-new">Invoice Reader</h3>
+        <p class="tool-description-new">Automatically extract invoice data including items, quantities, prices, taxes, and totals. Export to CSV with one click.</p>
+        <div class="tool-features-new">
+          <span class="tool-feature-tag">Auto Extraction</span>
+          <span class="tool-feature-tag">CSV Export</span>
+          <span class="tool-feature-tag">Fraud Detection</span>
+        </div>
+        <button class="tool-btn-new">Try Now →</button>
+      </div>
+      
+      <!-- Contract Analyzer -->
+      <div class="tool-card-new" onclick="window.location.href='/contract-analyzer'">
+        <div class="tool-icon-new">📑</div>
+        <h3 class="tool-title-new">Contract Analyzer</h3>
+        <p class="tool-description-new">Break down complex contracts, identify risks, obligations, and missing clauses. Get negotiation points and recommendations.</p>
+        <div class="tool-features-new">
+          <span class="tool-feature-tag">Clause Analysis</span>
+          <span class="tool-feature-tag">Risk Assessment</span>
+          <span class="tool-feature-tag">Legal Insights</span>
+        </div>
+        <button class="tool-btn-new">Try Now →</button>
+      </div>
+      
+      <!-- Salary Slip Analyzer -->
+      <div class="tool-card-new" onclick="window.location.href='/salary-slip'">
+        <div class="tool-icon-new">💰</div>
+        <h3 class="tool-title-new">Salary Slip Analyzer</h3>
+        <p class="tool-description-new">Extract and validate payroll data including earnings, deductions, taxes, and net pay. Detect discrepancies instantly.</p>
+        <div class="tool-features-new">
+          <span class="tool-feature-tag">Payroll Extraction</span>
+          <span class="tool-feature-tag">Tax Validation</span>
+          <span class="tool-feature-tag">Error Detection</span>
+        </div>
+        <button class="tool-btn-new">Try Now →</button>
+      </div>
+      
+      <!-- Resume Analyzer -->
+      <div class="tool-card-new" onclick="switchTab('resume'); setTimeout(() => { document.getElementById('toolSection').style.display = 'block'; document.getElementById('toolSection').scrollIntoView({behavior: 'smooth'}); }, 100);">
+        <div class="tool-icon-new">📄</div>
+        <h3 class="tool-title-new">Resume Analyzer</h3>
+        <p class="tool-description-new">Get ATS compatibility scores, match with job descriptions, and receive AI-powered suggestions to improve your resume.</p>
+        <div class="tool-features-new">
+          <span class="tool-feature-tag">ATS Scoring</span>
+          <span class="tool-feature-tag">JD Matching</span>
+          <span class="tool-feature-tag">AI Rewrites</span>
+        </div>
+        <button class="tool-btn-new">Try Now →</button>
+      </div>
+      
+      <!-- Website Summary -->
+      <div class="tool-card-new" onclick="window.location.href='/website-summary'">
+        <div class="tool-icon-new">🌐</div>
+        <h3 class="tool-title-new">Website Summary</h3>
+        <p class="tool-description-new">Convert any website into a structured summary with key sections, missing content analysis, and purpose clarity.</p>
+        <div class="tool-features-new">
+          <span class="tool-feature-tag">Content Extraction</span>
+          <span class="tool-feature-tag">Structured Summary</span>
+          <span class="tool-feature-tag">Gap Analysis</span>
+        </div>
+        <button class="tool-btn-new">Try Now →</button>
+      </div>
+      
+      <!-- Business Docs -->
+      <div class="tool-card-new" onclick="window.location.href='/business-docs-ai'">
+        <div class="tool-icon-new">📊</div>
+        <h3 class="tool-title-new">Business Docs AI</h3>
+        <p class="tool-description-new">Comprehensive analysis of invoices, contracts, reports, and business documents with actionable insights and risk flags.</p>
+        <div class="tool-features-new">
+          <span class="tool-feature-tag">Multi-Doc Support</span>
+          <span class="tool-feature-tag">Risk Detection</span>
+          <span class="tool-feature-tag">Action Items</span>
+        </div>
+        <button class="tool-btn-new">Try Now →</button>
+      </div>
+      
+      <!-- EDI Validator -->
+      <div class="tool-card-new" onclick="switchTab('edi'); setTimeout(() => { document.getElementById('toolSection').style.display = 'block'; document.getElementById('toolSection').scrollIntoView({behavior: 'smooth'}); }, 100);">
+        <div class="tool-icon-new">🚢</div>
+        <h3 class="tool-title-new">EDI Validator</h3>
+        <p class="tool-description-new">Validate BAPLIE, MOVINS, COPRAR, and other EDI formats. Detect errors, validate container data, and ensure compliance.</p>
+        <div class="tool-features-new">
+          <span class="tool-feature-tag">Format Validation</span>
+          <span class="tool-feature-tag">Error Detection</span>
+          <span class="tool-feature-tag">Logistics Focus</span>
+        </div>
+        <button class="tool-btn-new">Try Now →</button>
+      </div>
+      
+      <!-- Website Analyzer -->
+      <div class="tool-card-new" onclick="window.location.href='/website-analyzer'">
+        <div class="tool-icon-new">🔍</div>
+        <h3 class="tool-title-new">Website Analyzer</h3>
+        <p class="tool-description-new">Get comprehensive SEO analysis, content structure breakdown, keyword extraction, and actionable recommendations.</p>
+        <div class="tool-features-new">
+          <span class="tool-feature-tag">SEO Scoring</span>
+          <span class="tool-feature-tag">Content Analysis</span>
+          <span class="tool-feature-tag">Optimization Tips</span>
+        </div>
+        <button class="tool-btn-new">Try Now →</button>
+      </div>
     </div>
-    
-    <!-- Contract Analyzer -->
-    <div class="feature-card" onclick="window.location.href='/contract-analyzer'">
-      <div class="feature-icon">📑</div>
-      <h3 class="feature-title">Contract Analyzer</h3>
-      <ul class="feature-list">
-        <li>Clause breakdown</li>
-        <li>Risk & obligation detection</li>
-        <li>Missing clause identification</li>
-      </ul>
-      <button class="feature-btn">Try Now →</button>
+  </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="how-it-works-section" id="how-it-works">
+  <div class="section-container">
+    <div class="section-header">
+      <h2 class="section-title">How It Works</h2>
+      <p class="section-description">Get instant AI-powered insights in three simple steps</p>
     </div>
-    
-    <!-- Salary Slip Analyzer -->
-    <div class="feature-card" onclick="window.location.href='/salary-slip'">
-      <div class="feature-icon">💰</div>
-      <h3 class="feature-title">Salary Slip Analyzer</h3>
-      <ul class="feature-list">
-        <li>Extract earnings & deductions</li>
-        <li>Payroll validation</li>
-        <li>Variance & anomalies</li>
-      </ul>
-      <button class="feature-btn">Try Now →</button>
+    <div class="steps-grid-new">
+      <div class="step-card-new">
+        <div class="step-number-new">1</div>
+        <h3 class="step-title-new">Upload Your Document</h3>
+        <p class="step-description-new">Upload any PDF, EDI file, or enter a website URL. Our AI supports multiple document formats and file types.</p>
+      </div>
+      <div class="step-card-new">
+        <div class="step-number-new">2</div>
+        <h3 class="step-title-new">AI Analysis</h3>
+        <p class="step-description-new">Our advanced AI processes your document, extracts key information, identifies patterns, and detects potential issues.</p>
+      </div>
+      <div class="step-card-new">
+        <div class="step-number-new">3</div>
+        <h3 class="step-title-new">Get Instant Results</h3>
+        <p class="step-description-new">Receive comprehensive analysis, actionable insights, risk assessments, and recommendations in seconds.</p>
+      </div>
     </div>
-    
-    <!-- Resume Analyzer -->
-    <div class="feature-card" onclick="switchTab('resume'); setTimeout(() => document.getElementById('resume-tab').scrollIntoView({behavior: 'smooth'}), 100);">
-      <div class="feature-icon">📄</div>
-      <h3 class="feature-title">Resume Analyzer</h3>
-      <ul class="feature-list">
-        <li>ATS Score (0-100)</li>
-        <li>JD Match Analysis</li>
-        <li>Grammar & Clarity Fixes</li>
-      </ul>
-      <button class="feature-btn">Try Now →</button>
+  </div>
+</section>
+
+<!-- Why Choose Us Section -->
+<section class="why-choose-section">
+  <div class="section-container">
+    <div class="section-header">
+      <h2 class="section-title">Why Choose Our AI Document Platform</h2>
+      <p class="section-description">Experience the power of enterprise-grade AI analysis, completely free</p>
     </div>
-    
-    <!-- Website Summary -->
-    <div class="feature-card" onclick="window.location.href='/website-summary'">
-      <div class="feature-icon">🌐</div>
-      <h3 class="feature-title">Website Summary</h3>
-      <ul class="feature-list">
-        <li>Fetch webpage text</li>
-        <li>Generate structured summary</li>
-        <li>Extract key content automatically</li>
-      </ul>
-      <button class="feature-btn">Try Now →</button>
+    <div class="benefits-grid">
+      <div class="benefit-card">
+        <div class="benefit-icon">⚡</div>
+        <h3 class="benefit-title">Lightning Fast</h3>
+        <p class="benefit-description">Get results in seconds, not hours. Our AI processes documents instantly and delivers comprehensive analysis immediately.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">🔒</div>
+        <h3 class="benefit-title">Privacy First</h3>
+        <p class="benefit-description">Your documents are processed securely. We don't store your files permanently, ensuring complete privacy and data protection.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">🎯</div>
+        <h3 class="benefit-title">Highly Accurate</h3>
+        <p class="benefit-description">Powered by advanced AI models trained on millions of documents. Get precise insights and reliable analysis every time.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">💼</div>
+        <h3 class="benefit-title">Enterprise Ready</h3>
+        <p class="benefit-description">From individual users to large teams, our platform scales effortlessly. No limits, no restrictions, no hidden costs.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">🌍</div>
+        <h3 class="benefit-title">Multi-Format Support</h3>
+        <p class="benefit-description">Supports PDFs, EDI files, text documents, and websites. One platform for all your document analysis needs.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">🚀</div>
+        <h3 class="benefit-title">Always Free</h3>
+        <p class="benefit-description">No credit card required. No subscription fees. Access all features completely free, forever. No catch.</p>
+      </div>
     </div>
-    
-    <!-- Business Docs -->
-    <div class="feature-card" onclick="window.location.href='/business-docs-ai'">
-      <div class="feature-icon">📊</div>
-      <h3 class="feature-title">Business Docs</h3>
-      <ul class="feature-list">
-        <li>Invoice Analysis</li>
-        <li>Contract Review</li>
-        <li>Risk Detection</li>
-      </ul>
-      <button class="feature-btn">Try Now →</button>
+  </div>
+</section>
+
+<!-- Use Cases Section -->
+<section class="use-cases-section">
+  <div class="section-container">
+    <div class="section-header">
+      <h2 class="section-title">Use Cases</h2>
+      <p class="section-description">See how professionals across industries use our AI tools</p>
     </div>
-    
-    <!-- EDI Validator -->
-    <div class="feature-card" onclick="switchTab('edi'); setTimeout(() => document.getElementById('edi-tab').scrollIntoView({behavior: 'smooth'}), 100);">
-      <div class="feature-icon">🚢</div>
-      <h3 class="feature-title">EDI Validator</h3>
-      <ul class="feature-list">
-        <li>BAPLIE Validation</li>
-        <li>Error Detection</li>
-        <li>Container Analysis</li>
-      </ul>
-      <button class="feature-btn">Try Now →</button>
+    <div class="use-cases-grid">
+      <div class="use-case-card">
+        <div class="use-case-icon">👔</div>
+        <h3 class="use-case-title">HR & Recruitment</h3>
+        <p class="use-case-description">Screen resumes faster, match candidates with job descriptions, and identify top talent with AI-powered resume analysis.</p>
+        <ul class="use-case-list">
+          <li>ATS compatibility scoring</li>
+          <li>Skill gap analysis</li>
+          <li>Resume optimization</li>
+        </ul>
+      </div>
+      <div class="use-case-card">
+        <div class="use-case-icon">⚖️</div>
+        <h3 class="use-case-title">Legal & Compliance</h3>
+        <p class="use-case-description">Review contracts, identify risks, detect missing clauses, and ensure compliance with automated contract analysis.</p>
+        <ul class="use-case-list">
+          <li>Contract risk assessment</li>
+          <li>Clause identification</li>
+          <li>Compliance checking</li>
+        </ul>
+      </div>
+      <div class="use-case-card">
+        <div class="use-case-icon">📦</div>
+        <h3 class="use-case-title">Logistics & Shipping</h3>
+        <p class="use-case-description">Validate EDI files, ensure container data accuracy, and maintain compliance with shipping industry standards.</p>
+        <ul class="use-case-list">
+          <li>EDI format validation</li>
+          <li>Container tracking</li>
+          <li>Error detection</li>
+        </ul>
+      </div>
+      <div class="use-case-card">
+        <div class="use-case-icon">💼</div>
+        <h3 class="use-case-title">Finance & Accounting</h3>
+        <p class="use-case-description">Process invoices, extract financial data, detect anomalies, and streamline accounting workflows with AI automation.</p>
+        <ul class="use-case-list">
+          <li>Invoice processing</li>
+          <li>Data extraction</li>
+          <li>Fraud detection</li>
+        </ul>
+      </div>
     </div>
-    
-    <!-- Website Analyzer -->
-    <div class="feature-card" onclick="window.location.href='/website-analyzer'">
-      <div class="feature-icon">🔍</div>
-      <h3 class="feature-title">Website Analyzer</h3>
-      <ul class="feature-list">
-        <li>SEO Score</li>
-        <li>Content Analysis</li>
-        <li>Keyword Extraction</li>
-      </ul>
-      <button class="feature-btn">Try Now →</button>
+  </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="testimonials-section">
+  <div class="section-container">
+    <div class="section-header">
+      <h2 class="section-title">What Users Say</h2>
+      <p class="section-description">Trusted by professionals worldwide</p>
+    </div>
+    <div class="testimonials-grid">
+      <div class="testimonial-card">
+        <div class="testimonial-content">
+          <p class="testimonial-text">"This platform has revolutionized how we process resumes. The ATS scoring feature alone saves us hours every week."</p>
+        </div>
+        <div class="testimonial-author">
+          <div class="author-avatar">SM</div>
+          <div class="author-info">
+            <div class="author-name">Sarah Mitchell</div>
+            <div class="author-role">HR Director, Tech Corp</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="testimonial-content">
+          <p class="testimonial-text">"The EDI validator is a game-changer for our logistics team. We catch errors before they become costly problems."</p>
+        </div>
+        <div class="testimonial-author">
+          <div class="author-avatar">JD</div>
+          <div class="author-info">
+            <div class="author-name">James Davis</div>
+            <div class="author-role">Operations Manager, Global Shipping</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="testimonial-content">
+          <p class="testimonial-text">"Incredibly accurate contract analysis. It helps us identify risks we might have missed and speeds up our review process significantly."</p>
+        </div>
+        <div class="testimonial-author">
+          <div class="author-avatar">AL</div>
+          <div class="author-info">
+            <div class="author-name">Alexandra Lee</div>
+            <div class="author-role">Legal Counsel, Enterprise Solutions</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SEO Content Section -->
+<section class="seo-content-section">
+  <div class="section-container">
+    <div class="seo-content-wrapper">
+      <h2 class="seo-content-title">AI-Powered Document Analysis: Transform Your Workflow with Intelligent Automation</h2>
+      
+      <p>In today's fast-paced business environment, document processing and analysis have become critical bottlenecks that slow down productivity and decision-making. Traditional manual review processes are time-consuming, error-prone, and simply cannot scale with the volume of documents modern organizations handle daily. This is where AI-powered document analysis platforms revolutionize how businesses interact with their documents.</p>
+
+      <p>Our comprehensive suite of AI document analysis tools leverages cutting-edge artificial intelligence and machine learning technologies to provide instant, accurate, and actionable insights from a wide variety of document types. Whether you're dealing with resumes, contracts, invoices, EDI files, or website content, our platform transforms raw documents into structured, analyzable data in seconds.</p>
+
+      <h3>Revolutionary AI Technology for Document Intelligence</h3>
+      
+      <p>The foundation of our platform rests on advanced natural language processing (NLP) and computer vision technologies that can understand context, extract meaning, and identify patterns in documents just like a human expert would—but at machine speed and scale. Our AI models have been trained on millions of documents across various industries, enabling them to recognize document structures, extract key information, identify anomalies, and provide intelligent recommendations.</p>
+
+      <p>For HR professionals and recruiters, our Resume Analyzer tool offers unprecedented capabilities. It calculates ATS (Applicant Tracking System) compatibility scores, matches resumes against job descriptions, identifies skill gaps, and provides specific recommendations for improvement. This not only speeds up the recruitment process but also helps candidates optimize their resumes for better job opportunities.</p>
+
+      <h3>Comprehensive Business Document Analysis</h3>
+      
+      <p>Legal and compliance teams benefit immensely from our Contract Analyzer, which can process complex legal documents, identify key clauses, flag potential risks, detect missing terms, and even suggest negotiation points. This level of analysis, which would typically take hours of manual review, is completed in seconds with remarkable accuracy.</p>
+
+      <p>Finance and accounting departments can leverage our Invoice Reader to automatically extract line items, quantities, prices, taxes, and totals from invoices. The system can detect suspicious charges, validate calculations, and export data directly to CSV format for seamless integration with existing accounting systems. This automation eliminates manual data entry errors and frees up valuable time for strategic financial analysis.</p>
+
+      <h3>Specialized Tools for Industry-Specific Needs</h3>
+      
+      <p>Our EDI Validator addresses the unique needs of logistics and shipping industries. It validates BAPLIE, MOVINS, COPRAR, and other EDI formats, ensuring compliance with industry standards. The tool detects structural errors, validates container data, identifies missing segments, and provides comprehensive validation reports. This is particularly valuable for companies handling international shipping where EDI compliance is mandatory.</p>
+
+      <p>For marketing and SEO professionals, our Website Analyzer provides comprehensive website audits including SEO scoring, content structure analysis, keyword extraction, and actionable optimization recommendations. This tool helps businesses improve their online presence and search engine rankings through data-driven insights.</p>
+
+      <h3>Privacy, Security, and Accessibility</h3>
+      
+      <p>One of the most significant advantages of our platform is its commitment to privacy and security. Documents are processed securely and are not stored permanently, ensuring complete data protection. The platform is designed to be accessible to everyone—no login required, no credit card needed, and completely free to use. This democratizes access to enterprise-grade AI document analysis capabilities that were previously available only to large organizations with substantial budgets.</p>
+
+      <p>Our multi-format support means users can analyze PDFs, text documents, EDI files, and even entire websites through URL input. This versatility makes our platform a one-stop solution for all document analysis needs, eliminating the need for multiple specialized tools.</p>
+
+      <h3>The Future of Document Processing</h3>
+      
+      <p>As artificial intelligence continues to evolve, the capabilities of document analysis platforms will only expand. Our platform represents the current state-of-the-art in AI-powered document intelligence, combining speed, accuracy, and ease of use in a way that transforms how professionals interact with documents.</p>
+
+      <p>Whether you're a job seeker optimizing your resume, a legal professional reviewing contracts, a logistics manager validating EDI files, or a business owner processing invoices, our AI document analysis platform provides the tools you need to work smarter, faster, and more effectively. Experience the future of document processing today—completely free, with no strings attached.</p>
     </div>
   </div>
 </section>
