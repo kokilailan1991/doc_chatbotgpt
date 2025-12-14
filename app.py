@@ -21,6 +21,7 @@ try:
     from output_formats import OutputGenerator
     from business_docs_analyzer import BusinessDocsAnalyzer
     from website_analyzer import WebsiteAnalyzer
+    from contract_analyzer import ContractAnalyzer
 except ImportError as e:
     print(f"Warning: Could not import workflow modules: {e}")
     WorkflowProcessor = None
@@ -29,6 +30,7 @@ except ImportError as e:
     OutputGenerator = None
     BusinessDocsAnalyzer = None
     WebsiteAnalyzer = None
+    ContractAnalyzer = None
 
 # Import other dependencies with error handling
 try:
@@ -778,6 +780,29 @@ def business_docs_analyze():
         else:
             return jsonify({"error": "BusinessDocsAnalyzer not available"}), 500
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/contract/analyze", methods=["POST"])
+def contract_analyze():
+    """Professional contract analysis endpoint"""
+    try:
+        retriever = retriever_cache.get("active")
+        if not retriever:
+            return jsonify({"error": "Please upload a contract first"}), 400
+        
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if not openai_key:
+            return jsonify({"error": "OPENAI_API_KEY not configured"}), 500
+        
+        if ContractAnalyzer:
+            analyzer = ContractAnalyzer(openai_key)
+            analysis = analyzer.analyze_contract(retriever)
+            return jsonify(analysis)
+        else:
+            return jsonify({"error": "ContractAnalyzer not available"}), 500
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 # ==================== WEBSITE ANALYZER ENDPOINTS ====================
