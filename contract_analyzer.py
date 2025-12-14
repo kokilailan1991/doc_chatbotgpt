@@ -80,7 +80,7 @@ class ContractAnalyzer:
 Context: {context}
 
 Return a JSON object with:
-- parties: {provider: "name", client: "name"}
+- parties: {{"provider": "name", "client": "name"}}
 - contractDate: "YYYY-MM-DD" or null
 - effectiveDate: "YYYY-MM-DD" or null
 - expirationDate: "YYYY-MM-DD" or null
