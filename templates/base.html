@@ -117,6 +117,45 @@
   </script>
 
   {% block scripts %}{% endblock %}
+  
+  <script>
+    // Fix dropdown to work on click
+    document.addEventListener('DOMContentLoaded', function() {
+      const dropdown = document.querySelector('.nav-dropdown');
+      const dropdownLink = dropdown?.querySelector('.nav-link');
+      const dropdownContent = dropdown?.querySelector('.dropdown-content');
+      
+      if (dropdown && dropdownLink && dropdownContent) {
+        let isOpen = false;
+        
+        // Toggle dropdown on click
+        dropdownLink.addEventListener('click', function(e) {
+          e.preventDefault();
+          isOpen = !isOpen;
+          dropdownContent.style.display = isOpen ? 'block' : 'none';
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+          if (!dropdown.contains(e.target)) {
+            isOpen = false;
+            dropdownContent.style.display = 'none';
+          }
+        });
+        
+        // Keep hover functionality as fallback
+        dropdown.addEventListener('mouseenter', function() {
+          dropdownContent.style.display = 'block';
+        });
+        
+        dropdown.addEventListener('mouseleave', function() {
+          if (!isOpen) {
+            dropdownContent.style.display = 'none';
+          }
+        });
+      }
+    });
+  </script>
 </body>
 </html>
 
