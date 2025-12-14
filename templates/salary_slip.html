@@ -72,8 +72,19 @@ document.getElementById("salaryUploadForm").addEventListener("submit", async (e)
 });
 
 async function analyzeSalary() {
-  document.getElementById("salaryResults").innerHTML = '<div class="loading">⏳ Analyzing salary slip... This may take a minute.</div>';
+  const resultsDiv = document.getElementById("salaryResults");
+  resultsDiv.innerHTML = '<div class="loading">⏳ Analyzing salary slip... This should take 15-30 seconds.</div>';
+  
+  // Disable button during analysis
+  const analyzeBtn = document.querySelector('button[onclick="analyzeSalary()"]');
+  const originalText = analyzeBtn ? analyzeBtn.textContent : '';
+  if (analyzeBtn) {
+    analyzeBtn.disabled = true;
+    analyzeBtn.textContent = '⏳ Analyzing...';
+  }
+  
   try {
+    const startTime = Date.now();
     const res = await fetch("/api/salary-slip/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -92,10 +103,23 @@ async function analyzeSalary() {
       return;
     }
     
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     displaySalaryResults("salaryResults", data);
     document.getElementById("salaryResults").scrollIntoView({ behavior: 'smooth' });
+    
+    // Re-enable button
+    if (analyzeBtn) {
+      analyzeBtn.disabled = false;
+      analyzeBtn.textContent = originalText;
+    }
   } catch (error) {
     document.getElementById("salaryResults").innerHTML = '<div class="error-message">❌ Error: ' + error.message + '</div>';
+    
+    // Re-enable button on error
+    if (analyzeBtn) {
+      analyzeBtn.disabled = false;
+      analyzeBtn.textContent = originalText;
+    }
   }
 }
 
@@ -160,7 +184,7 @@ function displaySalaryResults(containerId, data) {
   
   let html = '<div class="result-card fade-in"><h3 class="result-header">💰 Salary Slip Analysis</h3>';
   
-  // Initialize totals at the beginning
+  // Use provided totals if available, otherwise calculate
   let totalEarnings = 0;
   let totalDeductions = 0;
   
@@ -182,8 +206,13 @@ function displaySalaryResults(containerId, data) {
       }
       html += `<tr><td>${component}</td><td>${amount}</td></tr>`;
     });
-    html += `<tr class="total-row"><td><strong>Total Earnings</strong></td><td><strong>₹${totalEarnings.toLocaleString('en-IN')}</strong></td></tr>`;
+    
+    // Use provided totalEarnings if available, otherwise use calculated
+    const displayTotalEarnings = data.totalEarnings ? 
+      parseFloat(data.totalEarnings.replace(/[₹,$,\s]/g, '')) : totalEarnings;
+    html += `<tr class="total-row"><td><strong>Total Earnings</strong></td><td><strong>₹${displayTotalEarnings.toLocaleString('en-IN')}</strong></td></tr>`;
     html += '</tbody></table></div>';
+    totalEarnings = displayTotalEarnings; // Update for net pay calculation
   }
   
   // Expenses/Deductions Table
@@ -199,16 +228,26 @@ function displaySalaryResults(containerId, data) {
       }
       html += `<tr><td>${component}</td><td>${amount}</td></tr>`;
     });
-    html += `<tr class="total-row"><td><strong>Total Deductions</strong></td><td><strong>₹${totalDeductions.toLocaleString('en-IN')}</strong></td></tr>`;
+    
+    // Use provided totalDeductions if available, otherwise use calculated
+    const displayTotalDeductions = data.totalDeductions ? 
+      parseFloat(data.totalDeductions.replace(/[₹,$,\s]/g, '')) : totalDeductions;
+    html += `<tr class="total-row"><td><strong>Total Deductions</strong></td><td><strong>₹${displayTotalDeductions.toLocaleString('en-IN')}</strong></td></tr>`;
     html += '</tbody></table></div>';
+    totalDeductions = displayTotalDeductions; // Update for net pay calculation
   }
   
   // Calculate and show Net Pay (after both sections)
-  if (totalEarnings > 0 || totalDeductions > 0) {
-    const netPay = totalEarnings - totalDeductions;
-    if (netPay > 0) {
-      html += `<div class="result-section net-pay-card"><h4>💵 Net Pay:</h4><p class="net-pay-amount">₹${netPay.toLocaleString('en-IN')}</p></div>`;
-    }
+  // Use provided netPay if available, otherwise calculate
+  let netPay = 0;
+  if (data.netPay) {
+    netPay = parseFloat(data.netPay.replace(/[₹,$,\s]/g, ''));
+  } else if (totalEarnings > 0 || totalDeductions > 0) {
+    netPay = totalEarnings - totalDeductions;
+  }
+  
+  if (netPay > 0) {
+    html += `<div class="result-section net-pay-card"><h4>💵 Net Pay:</h4><p class="net-pay-amount">₹${netPay.toLocaleString('en-IN')}</p></div>`;
   }
   
   // Tax Flags - FIXED to handle objects properly

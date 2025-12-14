@@ -16,7 +16,14 @@ class ContractAnalyzer:
     
     def __init__(self, openai_api_key: str):
         from langchain_openai import ChatOpenAI
-        self.llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1, openai_api_key=openai_api_key)
+        # Use faster model with optimized settings
+        self.llm = ChatOpenAI(
+            model="gpt-4o-mini", 
+            temperature=0.1, 
+            openai_api_key=openai_api_key,
+            max_tokens=4000,  # Limit response size for faster processing
+            timeout=60  # 60 second timeout
+        )
         self.output_parser = StrOutputParser()
     
     def _create_chain(self, template: str, retriever):
@@ -38,40 +45,93 @@ class ContractAnalyzer:
         return chain
     
     def analyze_contract(self, retriever) -> Dict[str, Any]:
-        """Comprehensive contract analysis"""
+        """Comprehensive contract analysis - optimized for speed"""
         
-        # Extract metadata
-        metadata = self._extract_metadata(retriever)
+        # Get all document content once
+        def format_docs(docs):
+            return "\n\n".join(doc.page_content for doc in docs)
         
-        # Get summary
-        summary = self._get_summary(retriever)
+        docs = retriever.get_relevant_documents("contract") if hasattr(retriever, 'get_relevant_documents') else []
+        if not docs:
+            docs = retriever.get_relevant_documents("document") if hasattr(retriever, 'get_relevant_documents') else []
+        content = format_docs(docs) if docs else ""
         
-        # Extract obligations
-        obligations = self._extract_obligations(retriever)
+        # Single comprehensive analysis call instead of 7 separate calls
+        comprehensive_template = """Analyze this contract comprehensively and return ALL analysis in a single JSON response.
+
+Contract Document: {{context}}
+
+Return a JSON object with:
+- summary: comprehensive executive summary (2-3 paragraphs covering parties, purpose, key terms, obligations, risks)
+- metadata: object with parties (provider, client), contractDate, effectiveDate, expirationDate, contractValue, contractType, governingLaw, disputeResolution
+- providerObligations: array of obligations for provider/service provider (each with title, description, deadline)
+- clientObligations: array of obligations for client/customer (each with title, description, deadline)
+- risks: array of risk objects (each with title, description, severity: high/medium/low, category: legal/financial/operational/compliance, mitigation)
+- missingClauses: array of missing clauses (each with clauseName, importance: critical/important/recommended, description, suggestedWording)
+- keyClauses: object with payment, confidentiality, liability, termination, ipOwnership, disputeResolution, warranties, indemnification (brief 2-3 sentence summaries)
+- improvements: array of improvements (each with title, description, priority: high/medium/low, suggestedWording)
+
+Focus on the most important items. Limit risks to top 8, missingClauses to top 6, improvements to top 5.
+
+Return ONLY valid JSON, no additional text.
+"""
         
-        # Analyze risks
-        risks = self._analyze_risks(retriever)
+        # Replace double braces with single for context variable
+        formatted_template = comprehensive_template.replace("{{context}}", "{context}")
+        prompt = PromptTemplate.from_template(formatted_template)
+        chain = prompt | self.llm | self.output_parser
         
-        # Check for missing clauses
-        missing_clauses = self._check_missing_clauses(retriever)
-        
-        # Identify key clauses
-        key_clauses = self._identify_key_clauses(retriever)
-        
-        # Suggest improvements
-        improvements = self._suggest_improvements(retriever, risks, missing_clauses)
-        
-        return {
-            "summary": summary,
-            "metadata": metadata,
-            "providerObligations": obligations.get("provider", []),
-            "clientObligations": obligations.get("client", []),
-            "risks": risks,
-            "missingClauses": missing_clauses,
-            "keyClauses": key_clauses,
-            "improvements": improvements,
-            "overallRiskLevel": self._calculate_overall_risk(risks)
-        }
+        try:
+            # Use smaller context window for faster processing
+            result = chain.invoke({"context": content[:6000]})  # Optimized for speed
+            
+            # Parse the comprehensive result
+            if result.strip().startswith('{'):
+                analysis = json.loads(result)
+            else:
+                json_match = re.search(r'\{.*\}', result, re.DOTALL)
+                if json_match:
+                    analysis = json.loads(json_match.group())
+                else:
+                    analysis = {}
+            
+            # Extract all fields with defaults
+            risks = analysis.get("risks", [])
+            
+            return {
+                "summary": analysis.get("summary", "Contract analysis completed. Review the detailed sections below."),
+                "metadata": analysis.get("metadata", {
+                    "parties": {"provider": "Unknown", "client": "Unknown"},
+                    "contractDate": None,
+                    "effectiveDate": None,
+                    "expirationDate": None,
+                    "contractValue": None,
+                    "contractType": "Contract",
+                    "governingLaw": None,
+                    "disputeResolution": None
+                }),
+                "providerObligations": analysis.get("providerObligations", []),
+                "clientObligations": analysis.get("clientObligations", []),
+                "risks": risks,
+                "missingClauses": analysis.get("missingClauses", []),
+                "keyClauses": analysis.get("keyClauses", {}),
+                "improvements": analysis.get("improvements", []),
+                "overallRiskLevel": self._calculate_overall_risk(risks)
+            }
+        except Exception as e:
+            print(f"Error in comprehensive contract analysis: {e}")
+            # Fallback to basic analysis
+            return {
+                "summary": "Error analyzing contract. Please try again.",
+                "metadata": {"parties": {"provider": "Unknown", "client": "Unknown"}},
+                "providerObligations": [],
+                "clientObligations": [],
+                "risks": [],
+                "missingClauses": [],
+                "keyClauses": {},
+                "improvements": [],
+                "overallRiskLevel": "low"
+            }
     
     def _extract_metadata(self, retriever) -> Dict[str, Any]:
         """Extract contract metadata: parties, dates, value, etc."""

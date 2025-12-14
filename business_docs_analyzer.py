@@ -145,38 +145,18 @@ Return ONLY valid JSON array, no additional text.
         # 1. Extract detailed financial information
         financial_template = """Analyze this invoice and extract ALL financial details in JSON format.
 
-Invoice Document: {context}
+Invoice Document: {{context}}
 
-Extract and return a JSON object with:
-- invoiceNumber: invoice number or ID
-- invoiceDate: invoice date
-- dueDate: payment due date
-- vendorName: name of the vendor/supplier
-- vendorAddress: vendor's address
-- vendorGST: vendor GST registration number (if applicable)
-- vendorPAN: vendor PAN number (if applicable)
-- buyerName: buyer/customer name
-- buyerAddress: buyer's address
-- buyerGST: buyer GST registration number (if applicable)
-- buyerPAN: buyer PAN number (if applicable)
-- subtotal: subtotal amount before taxes
-- taxBreakdown: [array of tax objects with: taxType (e.g., "GST", "VAT", "Sales Tax"), taxRate (percentage), taxAmount, taxableAmount]
-- discount: discount amount (if any)
-- shippingCharges: shipping/delivery charges (if any)
-- totalAmount: final total amount
-- currency: currency code (INR, USD, etc.)
-- paymentTerms: payment terms (e.g., "Net 30", "Due on receipt")
-- paymentMethod: payment method mentioned
-- paymentTransactionID: payment transaction ID (if any)
-- lineItemsCount: number of line items
-- lineItemsTotal: sum of all line item amounts
+Extract and return a JSON object with these fields: invoiceNumber, invoiceDate, dueDate, vendorName, vendorAddress, vendorGST, vendorPAN, buyerName, buyerAddress, buyerGST, buyerPAN, subtotal, taxBreakdown (array of tax objects with taxType, taxRate, taxAmount, taxableAmount), discount, shippingCharges, totalAmount, currency, paymentTerms, paymentMethod, paymentTransactionID, lineItemsCount, lineItemsTotal.
 
 Return ONLY valid JSON, no additional text.
 """
         
-        prompt = PromptTemplate.from_template(financial_template)
+        # Replace double braces with single for context variable
+        formatted_template = financial_template.replace("{{context}}", "{context}")
+        prompt = PromptTemplate.from_template(formatted_template)
         chain = prompt | self.llm | self.output_parser
-        financial_data = chain.invoke({"context": content[:10000]})
+        financial_data = chain.invoke({"context": content[:8000]})  # Reduced for speed
         
         financial_info = {}
         try:
@@ -192,24 +172,11 @@ Return ONLY valid JSON, no additional text.
         # 2. Detailed risk and compliance analysis
         risk_template = """Perform a comprehensive risk and compliance analysis of this invoice.
 
-Invoice Document: {context}
+Invoice Document: {{context}}
 
-Return a JSON object with:
-- risks: [array of risk objects, each with:
-    - title: risk title
-    - description: detailed explanation of the risk (3-5 sentences explaining why it's a risk, what could go wrong, and potential impact)
-    - severity: "high", "medium", or "low"
-    - category: risk category (e.g., "Tax Compliance", "Data Security", "Payment Issues", "Documentation", "Financial")
-    - evidence: specific evidence from the invoice that supports this risk (quote exact values, dates, or text)
-    - impact: potential impact if this risk materializes
-    - recommendation: specific recommendation to mitigate this risk
-    - affectedAmount: amount affected by this risk (if applicable)
-]
-- complianceIssues: [array of compliance issues with detailed explanations]
-- calculationErrors: [array of calculation errors found (e.g., "Subtotal + Tax should equal Total but shows discrepancy of X")]
-- missingInformation: [array of missing critical information]
-- duplicateCharges: [array of any duplicate charges found]
-- suspiciousPatterns: [array of suspicious patterns detected with detailed explanations]
+Return a JSON object with: risks (array of risk objects with title, description, severity, category, evidence, impact, recommendation, affectedAmount), complianceIssues (array), calculationErrors (array), missingInformation (array), duplicateCharges (array), suspiciousPatterns (array).
+
+Each risk object should have: title, description (3-5 sentences), severity (high/medium/low), category, evidence, impact, recommendation, affectedAmount.
 
 Return ONLY valid JSON, no additional text.
 """
@@ -232,34 +199,20 @@ Return ONLY valid JSON, no additional text.
         # 3. Detailed line item analysis
         line_items_template = """Analyze all line items in this invoice in detail.
 
-Invoice Document: {context}
+Invoice Document: {{context}}
 
 Return a JSON object with:
-- lineItems: [array of line item objects, each with:
-    - itemNumber: line item number
-    - description: item/service description
-    - quantity: quantity
-    - unitPrice: unit price
-    - totalPrice: total price for this line
-    - taxRate: tax rate applied (if any)
-    - taxAmount: tax amount for this line (if any)
-    - category: item category (e.g., "Product", "Service", "Shipping")
-    - notes: any notes or special conditions for this item
-]
-- lineItemsSummary: {
-    - totalItems: total number of line items
-    - categories: [array of categories with item counts]
-    - highestValueItem: item with highest value
-    - lowestValueItem: item with lowest value
-    - averageItemValue: average value per item
-}
+- lineItems: array of line item objects, each with: itemNumber, description, quantity, unitPrice, totalPrice, taxRate, taxAmount, category, notes
+- lineItemsSummary: object with: totalItems (total number of line items), categories (array of categories with item counts), highestValueItem, lowestValueItem, averageItemValue
 
 Return ONLY valid JSON, no additional text.
 """
         
-        prompt = PromptTemplate.from_template(line_items_template)
+        # Replace double braces with single for context variable
+        formatted_template = line_items_template.replace("{{context}}", "{context}")
+        prompt = PromptTemplate.from_template(formatted_template)
         chain = prompt | self.llm | self.output_parser
-        line_items_data = chain.invoke({"context": content[:10000]})
+        line_items_data = chain.invoke({"context": content[:8000]})  # Reduced for speed
         
         line_items_info = {"lineItems": [], "lineItemsSummary": {}}
         try:
@@ -275,31 +228,16 @@ Return ONLY valid JSON, no additional text.
         # 4. Payment and terms analysis
         payment_template = """Analyze payment terms, conditions, and payment-related information in this invoice.
 
-Invoice Document: {context}
+Invoice Document: {{context}}
 
-Return a JSON object with:
-- paymentTerms: {
-    - terms: payment terms text
-    - dueDate: due date
-    - daysUntilDue: number of days until due date
-    - earlyPaymentDiscount: early payment discount (if any)
-    - latePaymentPenalty: late payment penalty (if any)
-    - paymentMethods: [array of accepted payment methods]
-}
-- paymentStatus: current payment status (if mentioned)
-- paymentHistory: any payment history mentioned
-- bankDetails: {
-    - accountNumber: bank account number (if mentioned)
-    - bankName: bank name
-    - ifscCode: IFSC code (if applicable)
-    - swiftCode: SWIFT code (if applicable)
-}
-- recommendations: [array of payment-related recommendations]
+Return a JSON object with: paymentTerms (object with terms, dueDate, daysUntilDue, earlyPaymentDiscount, latePaymentPenalty, paymentMethods), paymentStatus, paymentHistory, bankDetails (object with accountNumber, bankName, ifscCode, swiftCode), recommendations (array).
 
 Return ONLY valid JSON, no additional text.
 """
         
-        prompt = PromptTemplate.from_template(payment_template)
+        # Replace double braces with single for context variable
+        formatted_template = payment_template.replace("{{context}}", "{context}")
+        prompt = PromptTemplate.from_template(formatted_template)
         chain = prompt | self.llm | self.output_parser
         payment_data = chain.invoke({"context": content[:10000]})
         
@@ -317,24 +255,18 @@ Return ONLY valid JSON, no additional text.
         # 5. Enhanced summary with all key details
         summary_template = """Create a comprehensive, detailed summary of this invoice that includes all important information.
 
-Invoice Document: {context}
+Invoice Document: {{context}}
 
-Create a detailed summary (3-5 paragraphs) that includes:
-- Overview of the invoice (vendor, buyer, invoice number, dates)
-- Total amount and currency
-- Breakdown of charges (subtotal, taxes, discounts, shipping)
-- Number of line items and key items/services
-- Payment terms and due date
-- Any notable issues, risks, or concerns
-- Key compliance information (GST, PAN numbers if applicable)
-- Recommendations for the buyer
+Create a detailed summary (3-5 paragraphs) that includes: Overview of the invoice (vendor, buyer, invoice number, dates), Total amount and currency, Breakdown of charges (subtotal, taxes, discounts, shipping), Number of line items and key items/services, Payment terms and due date, Any notable issues, risks, or concerns, Key compliance information (GST, PAN numbers if applicable), Recommendations for the buyer.
 
 Return the summary as plain text (not JSON).
 """
         
-        prompt = PromptTemplate.from_template(summary_template)
+        # Replace double braces with single for context variable
+        formatted_template = summary_template.replace("{{context}}", "{context}")
+        prompt = PromptTemplate.from_template(formatted_template)
         chain = prompt | self.llm | self.output_parser
-        detailed_summary = chain.invoke({"context": content[:10000]})
+        detailed_summary = chain.invoke({"context": content[:8000]})  # Reduced for speed
         
         # Extract tables
         tables = self.extract_tables(retriever)

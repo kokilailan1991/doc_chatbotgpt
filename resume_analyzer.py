@@ -18,18 +18,19 @@ class ResumeAnalyzer:
         self.workflow = WorkflowProcessor(openai_key)
     
     def calculate_ats_score(self, resume_retriever, jd_retriever=None) -> Dict[str, Any]:
-        """Calculate ATS (Applicant Tracking System) score for resume"""
-        template = """Analyze this resume for ATS compatibility and calculate an ATS score.
-        
+        """Calculate ATS (Applicant Tracking System) score for resume - detailed analysis"""
+        template = """Analyze this resume comprehensively for ATS compatibility and calculate a detailed ATS score.
+
 Resume Content: {context}
 Job Description: {job_description}
 
-Evaluate the resume on:
-1. Keywords match (0-25 points)
-2. Format compatibility (0-20 points)
-3. Skills alignment (0-25 points)
-4. Experience relevance (0-20 points)
-5. Education match (0-10 points)
+Evaluate the resume on these criteria with specific, detailed feedback:
+
+1. Keywords match (0-25 points): Check if resume contains relevant keywords from job description. List specific missing keywords.
+2. Format compatibility (0-20 points): Assess if resume uses ATS-friendly format (standard fonts, clear sections, no graphics/tables that break parsing).
+3. Skills alignment (0-25 points): Compare resume skills with job requirements. Identify matching and missing skills.
+4. Experience relevance (0-20 points): Evaluate how well work experience matches job requirements. Assess years of experience, industry relevance.
+5. Education match (0-10 points): Check if education meets job requirements.
 
 Return a JSON object with:
 - overallScore: number (0-100)
@@ -38,10 +39,12 @@ Return a JSON object with:
 - skillsScore: number (0-25)
 - experienceScore: number (0-20)
 - educationScore: number (0-10)
-- missingKeywords: [list of missing keywords from JD]
-- strengths: [list of resume strengths]
-- weaknesses: [list of resume weaknesses]
-- recommendations: [list of improvement recommendations]
+- missingKeywords: [array of specific missing keywords from JD, e.g., "Python", "Project Management", "Agile"]
+- strengths: [array of specific strengths with details, e.g., "Strong technical skills section with relevant programming languages", "Clear work history with quantifiable achievements", "ATS-friendly format with standard sections"]
+- weaknesses: [array of specific weaknesses with details, e.g., "Missing key skill: 'Machine Learning' mentioned in job description", "Work experience descriptions lack quantifiable metrics", "Resume format may not be fully ATS-compatible due to complex formatting"]
+- recommendations: [array of specific, actionable recommendations, e.g., "Add 'Python' and 'SQL' to skills section as they are required in job description", "Quantify achievements in experience section (e.g., 'Increased sales by 25%' instead of 'Improved sales')", "Simplify resume format - remove tables and graphics that may confuse ATS systems"]
+
+IMPORTANT: Provide specific, detailed feedback. Avoid generic statements like "good format" or "needs improvement". Be specific about what is good and what needs to be changed.
 
 Return ONLY valid JSON, no additional text.
 """
@@ -90,35 +93,58 @@ Return ONLY valid JSON, no additional text.
         }
     
     def rewrite_resume(self, resume_retriever, improvements: List[str] = None) -> str:
-        """Rewrite resume with improvements"""
-        template = """Rewrite and improve this resume based on the following improvements.
-        
-Original Resume: {context}
-Improvements to apply: {improvements}
+        """Rewrite resume with improvements - comprehensive and accurate"""
+        template = """You are an expert resume writer. Rewrite and improve this resume based on the following improvements.
 
-Create an improved version of the resume that:
-- Incorporates all suggested improvements
-- Maintains the original structure and content
-- Enhances clarity and impact
-- Optimizes for ATS systems
+Original Resume Content:
+{context}
 
-Return the improved resume text.
+Improvements to Apply:
+{improvements}
+
+IMPORTANT INSTRUCTIONS:
+1. Maintain the EXACT structure and sections from the original resume (e.g., if it has "Experience", "Education", "Skills", keep those sections)
+2. Keep ALL factual information accurate (names, dates, companies, job titles, degrees, etc.)
+3. Enhance bullet points with action verbs and quantifiable achievements
+4. Optimize keywords for ATS systems while keeping content natural
+5. Improve clarity and impact of descriptions
+6. Fix any grammar or formatting issues
+7. Make the resume more compelling and professional
+8. DO NOT create fake or placeholder content - only improve what exists
+
+Return the COMPLETE improved resume in a clear, well-formatted structure. Include all sections from the original resume with improvements applied.
 """
         
         def format_docs(docs):
             return "\n\n".join(doc.page_content for doc in docs)
         
         resume_docs = resume_retriever.get_relevant_documents("resume") if hasattr(resume_retriever, 'get_relevant_documents') else []
+        if not resume_docs:
+            resume_docs = resume_retriever.get_relevant_documents("document") if hasattr(resume_retriever, 'get_relevant_documents') else []
+        
         resume_text = "\n\n".join([doc.page_content for doc in resume_docs]) if resume_docs else ""
-        improvements_text = "\n".join(improvements) if improvements else "General improvements for ATS optimization"
+        
+        if not resume_text or len(resume_text.strip()) < 50:
+            return "Error: Could not extract resume content. Please ensure the resume PDF is readable."
+        
+        improvements_text = "\n".join(improvements) if improvements else "General improvements: Optimize for ATS, enhance clarity, use action verbs, add quantifiable achievements"
         
         prompt = PromptTemplate.from_template(template)
         chain = prompt | self.llm | self.output_parser
         
-        return chain.invoke({
-            "context": resume_text,
-            "improvements": improvements_text
-        })
+        try:
+            result = chain.invoke({
+                "context": resume_text[:10000],  # Limit context for better performance
+                "improvements": improvements_text
+            })
+            
+            # Validate that we got actual content, not placeholder
+            if result and len(result.strip()) > 100 and not any(placeholder in result.lower() for placeholder in ['lorem', 'ipsum', 'placeholder', 'example text']):
+                return result
+            else:
+                return "Error: Generated resume appears to be incomplete. Please try again."
+        except Exception as e:
+            return f"Error generating rewritten resume: {str(e)}"
     
     def match_with_jd(self, resume_retriever, jd_retriever) -> Dict[str, Any]:
         """Match resume with job description"""

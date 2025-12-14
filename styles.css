@@ -868,11 +868,12 @@ input[type="file"]::file-selector-button:hover {
 
 /* ========== FOOTER ========== */
 .main-footer {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   padding: 4rem 2rem 2rem;
   margin-top: auto;
   color: rgba(255, 255, 255, 0.9);
   position: relative;
+  border-top: 1px solid rgba(102, 126, 234, 0.2);
 }
 
 .footer-container {
@@ -889,13 +890,6 @@ input[type="file"]::file-selector-button:hover {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  background-color: rgba(27, 120, 121, 1);
-  color: rgba(55, 98, 87, 1);
-  background-clip: unset;
-  -webkit-background-clip: unset;
-  border-style: solid;
-  border-width: 1px;
-  border-color: rgba(139, 39, 118, 1);
 }
 
 .footer-title {
@@ -903,6 +897,10 @@ input[type="file"]::file-selector-button:hover {
   font-weight: 700;
   color: rgba(255, 255, 255, 0.95);
   margin: 0 0 0.5rem 0;
+  background: linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .footer-column p {
@@ -1435,4 +1433,327 @@ details summary:hover {
   font-size: 0.875rem;
   line-height: 1.6;
   margin: 1rem 0;
+}
+
+/* ========== SEO CONTENT SECTIONS - MODERN DESIGN ========== */
+.seo-page-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.seo-header {
+  text-align: center;
+  margin-bottom: 4rem;
+  padding: 2rem 0;
+}
+
+.seo-header h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 1rem;
+}
+
+.seo-subtitle {
+  font-size: 1.2rem;
+  color: var(--color-text-light);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.seo-section-modern {
+  margin: 4rem 0;
+  padding: 3rem 0;
+}
+
+.seo-section-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.seo-section-header h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 0.5rem;
+}
+
+.seo-section-subtitle {
+  font-size: 1.1rem;
+  color: var(--color-text-light);
+  margin-top: 0.5rem;
+}
+
+/* Steps Grid */
+.steps-grid-modern {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.step-card-modern {
+  background: var(--color-white);
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+  text-align: center;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  border: 2px solid transparent;
+}
+
+.step-card-modern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gradient-primary);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.step-card-modern:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(102, 126, 234, 0.2);
+}
+
+.step-card-modern:hover::before {
+  transform: scaleX(1);
+}
+
+.step-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.step-number-modern {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  background: var(--gradient-primary);
+  color: white;
+  border-radius: 50%;
+  line-height: 40px;
+  font-weight: 700;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.step-card-modern h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 0.75rem;
+}
+
+.step-card-modern p {
+  color: var(--color-text-light);
+  line-height: 1.6;
+}
+
+/* Features Grid */
+.features-grid-modern {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.feature-card-modern {
+  background: var(--color-white);
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s ease;
+  border-left: 4px solid transparent;
+}
+
+.feature-card-modern:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-left-color: var(--color-primary);
+}
+
+.feature-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.feature-card-modern h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 0.75rem;
+}
+
+.feature-card-modern p {
+  color: var(--color-text-light);
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+/* SEO Content Card */
+.seo-content-card {
+  background: var(--color-white);
+  padding: 3rem;
+  border-radius: 20px;
+  box-shadow: var(--shadow-lg);
+  margin-top: 2rem;
+}
+
+.seo-content-body {
+  margin-top: 2rem;
+}
+
+.seo-intro {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: var(--color-text);
+  margin-bottom: 2rem;
+}
+
+.analysis-dimensions {
+  margin: 2rem 0;
+}
+
+.analysis-dimensions h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.dimensions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.dimension-card {
+  background: var(--bg-gradient-1);
+  padding: 1.5rem;
+  border-radius: 12px;
+  text-align: center;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.dimension-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: rgba(102, 126, 234, 0.3);
+}
+
+.dimension-icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.dimension-card h4 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 0.5rem;
+}
+
+.dimension-card p {
+  color: var(--color-text-light);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.seo-benefits {
+  margin-top: 2rem;
+  padding: 2rem;
+  background: var(--bg-gradient-1);
+  border-radius: 12px;
+}
+
+.seo-benefits h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 1rem;
+}
+
+.seo-benefits p {
+  color: var(--color-text);
+  line-height: 1.8;
+  font-size: 1rem;
+}
+
+/* FAQ Grid */
+.faq-grid-modern {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.faq-card-modern {
+  background: var(--color-white);
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s ease;
+  border-top: 4px solid transparent;
+}
+
+.faq-card-modern:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-top-color: var(--color-primary);
+}
+
+.faq-icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.faq-card-modern h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 0.75rem;
+}
+
+.faq-card-modern p {
+  color: var(--color-text-light);
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+/* Responsive SEO Sections */
+@media (max-width: 768px) {
+  .seo-header h1 {
+    font-size: 2rem;
+  }
+  
+  .steps-grid-modern,
+  .features-grid-modern,
+  .dimensions-grid,
+  .faq-grid-modern {
+    grid-template-columns: 1fr;
+  }
+  
+  .seo-content-card {
+    padding: 2rem 1.5rem;
+  }
 }

@@ -72,8 +72,19 @@ document.getElementById("contractUploadForm").addEventListener("submit", async (
 });
 
 async function analyzeContract() {
-  document.getElementById("contractResults").innerHTML = '<div class="loading">⏳ Analyzing contract... This may take a minute.</div>';
+  const resultsDiv = document.getElementById("contractResults");
+  resultsDiv.innerHTML = '<div class="loading">⏳ Analyzing contract... This should take 15-30 seconds.</div>';
+  
+  // Disable button during analysis
+  const analyzeBtn = document.querySelector('button[onclick="analyzeContract()"]');
+  const originalText = analyzeBtn ? analyzeBtn.textContent : '';
+  if (analyzeBtn) {
+    analyzeBtn.disabled = true;
+    analyzeBtn.textContent = '⏳ Analyzing...';
+  }
+  
   try {
+    const startTime = Date.now();
     const res = await fetch("/api/contract/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -92,10 +103,23 @@ async function analyzeContract() {
       return;
     }
     
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     displayContractResults("contractResults", data);
     document.getElementById("contractResults").scrollIntoView({ behavior: 'smooth' });
+    
+    // Re-enable button
+    if (analyzeBtn) {
+      analyzeBtn.disabled = false;
+      analyzeBtn.textContent = originalText;
+    }
   } catch (error) {
     document.getElementById("contractResults").innerHTML = '<div class="error-message">❌ Error: ' + error.message + '</div>';
+    
+    // Re-enable button on error
+    if (analyzeBtn) {
+      analyzeBtn.disabled = false;
+      analyzeBtn.textContent = originalText;
+    }
   }
 }
 
