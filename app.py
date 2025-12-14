@@ -995,15 +995,29 @@ def upload_file():
                 text = f.read()
         elif filename.endswith(".pdf"):
             # Read PDF files
-            doc = fitz.open(path)
-            for page in doc:
-                text += page.get_text()
-            doc.close()
+            try:
+                doc = fitz.open(path)
+                for page in doc:
+                    page_text = page.get_text()
+                    if page_text:
+                        text += page_text
+                    else:
+                        # Try to extract text from images if no text found (scanned PDF)
+                        # Note: This requires OCR which is not included by default
+                        # For now, we'll just continue and let the user know
+                        pass
+                doc.close()
+                
+                # If no text extracted, it might be a scanned/image-based PDF
+                if not text.strip():
+                    return jsonify({"error": "Could not extract text from PDF. This might be a scanned/image-based PDF. Please ensure the PDF contains selectable text, or convert it to a text-based PDF first."}), 400
+            except Exception as e:
+                return jsonify({"error": f"Error reading PDF file: {str(e)}"}), 400
         else:
             return jsonify({"error": "Unsupported file type. Please upload PDF, EDI, or text files."}), 400
 
         if not text.strip():
-            return jsonify({"error": "Could not extract text from file"}), 400
+            return jsonify({"error": "Could not extract text from file. The file might be empty, corrupted, or in an unsupported format."}), 400
 
         docs = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100).create_documents([text])
 
