@@ -163,7 +163,19 @@ function displayInvoiceResults(containerId, data) {
   
   if (data.risks && data.risks.length > 0) {
     html += '<div class="result-section error-card"><h4>⚠️ Suspicious Charges:</h4><ul>';
-    data.risks.forEach(risk => html += '<li>' + risk + '</li>');
+    data.risks.forEach(risk => {
+      if (typeof risk === 'object' && risk !== null) {
+        // Handle object format with title, description, severity
+        const title = risk.title || risk.name || 'Risk';
+        const description = risk.description || risk.details || '';
+        const severity = risk.severity || risk.level || '';
+        const severityBadge = severity ? `<span class="severity-badge severity-${severity.toLowerCase()}">${severity}</span>` : '';
+        html += `<li><strong>${title}</strong> ${severityBadge}${description ? ': ' + description : ''}</li>`;
+      } else {
+        // Handle string format
+        html += '<li>' + risk + '</li>';
+      }
+    });
     html += '</ul></div>';
   }
   
@@ -244,6 +256,33 @@ function copyResult() {
   margin-top: 1rem;
   font-size: 1.25rem;
   color: #6C5DD3;
+}
+
+.severity-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+
+.severity-high {
+  background: #fee;
+  color: #c33;
+  border: 1px solid #c33;
+}
+
+.severity-medium {
+  background: #fff9e6;
+  color: #b8860b;
+  border: 1px solid #ffc107;
+}
+
+.severity-low {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #4caf50;
 }
 </style>
 {% endblock %}
