@@ -197,7 +197,20 @@ function displayInvoiceResults(containerId, data) {
       const summary = data.lineItemsAnalysis.lineItemsSummary;
       html += '<div style="margin-top: 1rem; padding: 1rem; background: #f8f9ff; border-radius: 8px;">';
       html += `<p><strong>Total Items:</strong> ${summary.totalItems || ''}</p>`;
-      if (summary.averageItemValue) html += `<p><strong>Average Item Value:</strong> ${data.financialDetails?.currency || ''} ${summary.averageItemValue}</p>`;
+      if (summary.averageItemValue) html += `<p><strong>Average Item Value:</strong> ${data.financialDetails?.currency || ''} ${summary.averageItemValue.toFixed(2)}</p>`;
+      
+      // Fix object display issues
+      if (summary.highestValueItem && typeof summary.highestValueItem === 'object') {
+        html += `<p><strong>Highest Value Item:</strong> ${summary.highestValueItem.description || 'N/A'} (${data.financialDetails?.currency || ''} ${summary.highestValueItem.totalPrice || 0})</p>`;
+      } else if (summary.highestValueItem) {
+        html += `<p><strong>Highest Value Item:</strong> ${summary.highestValueItem}</p>`;
+      }
+      
+      if (summary.lowestValueItem && typeof summary.lowestValueItem === 'object') {
+        html += `<p><strong>Lowest Value Item:</strong> ${summary.lowestValueItem.description || 'N/A'} (${data.financialDetails?.currency || ''} ${summary.lowestValueItem.totalPrice || 0})</p>`;
+      } else if (summary.lowestValueItem) {
+        html += `<p><strong>Lowest Value Item:</strong> ${summary.lowestValueItem}</p>`;
+      }
       if (summary.highestValueItem) html += `<p><strong>Highest Value Item:</strong> ${summary.highestValueItem}</p>`;
       html += '</div>';
     }

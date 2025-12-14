@@ -132,7 +132,7 @@ Return ONLY valid JSON array, no additional text.
         return []
     
     def analyze_invoice_detailed(self, retriever) -> Dict[str, Any]:
-        """Comprehensive detailed invoice analysis with financial breakdowns"""
+        """Comprehensive detailed invoice analysis with accurate extraction and calculation verification"""
         def format_docs(docs):
             return "\n\n".join(doc.page_content for doc in docs)
         
@@ -142,50 +142,205 @@ Return ONLY valid JSON array, no additional text.
             docs = retriever.get_relevant_documents("document") if hasattr(retriever, 'get_relevant_documents') else []
         content = format_docs(docs) if docs else ""
         
-        # 1. Extract detailed financial information
-        financial_template = """Analyze this invoice and extract ALL financial details in JSON format.
+        if not content or len(content.strip()) < 50:
+            return {
+                "documentType": "Invoice",
+                "error": "Could not extract invoice content. Please ensure the document is readable.",
+                "summary": "",
+                "financialDetails": {},
+                "lineItemsAnalysis": {},
+                "paymentAnalysis": {},
+                "riskAnalysis": {},
+                "tables": []
+            }
+        
+        # Single comprehensive extraction to ensure consistency
+        comprehensive_template = """Extract ALL data from this invoice accurately. Extract EXACT values from the document - do NOT create sample or example data.
 
 Invoice Document: {{context}}
 
-Extract and return a JSON object with these fields: invoiceNumber, invoiceDate, dueDate, vendorName, vendorAddress, vendorGST, vendorPAN, buyerName, buyerAddress, buyerGST, buyerPAN, subtotal, taxBreakdown (array of tax objects with taxType, taxRate, taxAmount, taxableAmount), discount, shippingCharges, totalAmount, currency, paymentTerms, paymentMethod, paymentTransactionID, lineItemsCount, lineItemsTotal.
+Extract and return a JSON object with:
+- invoiceNumber: exact invoice number from document
+- invoiceDate: exact date from document
+- dueDate: exact due date from document
+- vendorName: exact vendor/seller name from document
+- vendorAddress: exact vendor address from document
+- vendorGST: GST number if present
+- vendorPAN: PAN number if present
+- buyerName: exact buyer/recipient name from document
+- buyerAddress: exact buyer address from document
+- buyerGST: GST number if present
+- buyerPAN: PAN number if present
+- subtotal: subtotal amount as number (remove currency symbols)
+- taxBreakdown: array of tax objects, each with taxType (e.g., "CGST", "SGST", "IGST", "GST"), taxRate (as number), taxAmount (as number), taxableAmount (as number)
+- discount: discount amount as number (0 if not present)
+- shippingCharges: shipping amount as number (0 if not present)
+- totalAmount: total amount as number from document
+- currency: currency code (e.g., "USD", "INR", "₹", "$")
+- paymentTerms: exact payment terms from document
+- paymentMethod: payment method if mentioned
+- paymentTransactionID: transaction ID if present
+- lineItems: array of line item objects, each with itemNumber, description, quantity (as number), unitPrice (as number), totalPrice (as number), taxRate (as number), taxAmount (as number), category
+- lineItemsCount: total number of line items
+- lineItemsTotal: sum of all line item totalPrice values
+
+IMPORTANT:
+- Extract ONLY actual values from the document
+- Use exact names, dates, and amounts as they appear
+- Convert amounts to numbers (remove currency symbols and commas)
+- Verify calculations: subtotal + sum of all taxes - discount + shipping = totalAmount
+- If calculations don't match, note it in calculationErrors
 
 Return ONLY valid JSON, no additional text.
 """
         
         # Replace double braces with single for context variable
-        formatted_template = financial_template.replace("{{context}}", "{context}")
+        formatted_template = comprehensive_template.replace("{{context}}", "{context}")
         prompt = PromptTemplate.from_template(formatted_template)
         chain = prompt | self.llm | self.output_parser
-        financial_data = chain.invoke({"context": content[:8000]})  # Reduced for speed
         
-        financial_info = {}
         try:
-            if financial_data.strip().startswith('{'):
-                financial_info = json.loads(financial_data)
+            comprehensive_data = chain.invoke({"context": content[:10000]})
+            
+            # Parse comprehensive result
+            if comprehensive_data.strip().startswith('{'):
+                extracted_data = json.loads(comprehensive_data)
             else:
-                json_match = re.search(r'\{.*\}', financial_data, re.DOTALL)
+                json_match = re.search(r'\{.*\}', comprehensive_data, re.DOTALL)
                 if json_match:
-                    financial_info = json.loads(json_match.group())
+                    extracted_data = json.loads(json_match.group())
+                else:
+                    extracted_data = {}
+            
+            # Verify calculations
+            calculation_errors = []
+            subtotal = extracted_data.get("subtotal", 0) or 0
+            discount = extracted_data.get("discount", 0) or 0
+            shipping = extracted_data.get("shippingCharges", 0) or 0
+            total_tax = sum(tax.get("taxAmount", 0) or 0 for tax in extracted_data.get("taxBreakdown", []))
+            stated_total = extracted_data.get("totalAmount", 0) or 0
+            
+            calculated_total = subtotal + total_tax - discount + shipping
+            
+            if abs(calculated_total - stated_total) > 0.01:  # Allow small rounding differences
+                calculation_errors.append({
+                    "title": "Total Amount Calculation Mismatch",
+                    "message": f"Calculated total (Subtotal: {subtotal} + Tax: {total_tax} - Discount: {discount} + Shipping: {shipping} = {calculated_total}) does not match stated total ({stated_total}). Difference: {abs(calculated_total - stated_total)}"
+                })
+            
+            # Verify line items total
+            line_items = extracted_data.get("lineItems", [])
+            line_items_total = sum(float(item.get("totalPrice", 0) or 0) for item in line_items)
+            if line_items and abs(line_items_total - subtotal) > 0.01:
+                calculation_errors.append({
+                    "title": "Line Items Total Mismatch",
+                    "message": f"Sum of line items ({line_items_total}) does not match subtotal ({subtotal}). Difference: {abs(line_items_total - subtotal)}"
+                })
+            
+            # Separate financial info and line items
+            financial_info = {
+                "invoiceNumber": extracted_data.get("invoiceNumber"),
+                "invoiceDate": extracted_data.get("invoiceDate"),
+                "dueDate": extracted_data.get("dueDate"),
+                "vendorName": extracted_data.get("vendorName"),
+                "vendorAddress": extracted_data.get("vendorAddress"),
+                "vendorGST": extracted_data.get("vendorGST"),
+                "vendorPAN": extracted_data.get("vendorPAN"),
+                "buyerName": extracted_data.get("buyerName"),
+                "buyerAddress": extracted_data.get("buyerAddress"),
+                "buyerGST": extracted_data.get("buyerGST"),
+                "buyerPAN": extracted_data.get("buyerPAN"),
+                "subtotal": subtotal,
+                "taxBreakdown": extracted_data.get("taxBreakdown", []),
+                "discount": discount,
+                "shippingCharges": shipping,
+                "totalAmount": stated_total,
+                "currency": extracted_data.get("currency", "USD"),
+                "paymentTerms": extracted_data.get("paymentTerms"),
+                "paymentMethod": extracted_data.get("paymentMethod"),
+                "paymentTransactionID": extracted_data.get("paymentTransactionID"),
+                "lineItemsCount": extracted_data.get("lineItemsCount", len(line_items)),
+                "lineItemsTotal": line_items_total
+            }
+            
+            # Prepare line items analysis
+            line_items_info = {
+                "lineItems": line_items,
+                "lineItemsSummary": {
+                    "totalItems": len(line_items),
+                    "categories": {},
+                    "averageItemValue": line_items_total / len(line_items) if line_items else 0,
+                    "highestValueItem": None,
+                    "lowestValueItem": None
+                }
+            }
+            
+            # Calculate categories and find highest/lowest
+            if line_items:
+                for item in line_items:
+                    category = item.get("category", "Uncategorized")
+                    line_items_info["lineItemsSummary"]["categories"][category] = line_items_info["lineItemsSummary"]["categories"].get(category, 0) + 1
+                
+                # Find highest and lowest value items
+                highest = max(line_items, key=lambda x: float(x.get("totalPrice", 0) or 0))
+                lowest = min(line_items, key=lambda x: float(x.get("totalPrice", 0) or 0))
+                
+                line_items_info["lineItemsSummary"]["highestValueItem"] = {
+                    "description": highest.get("description", ""),
+                    "totalPrice": highest.get("totalPrice", 0)
+                }
+                line_items_info["lineItemsSummary"]["lowestValueItem"] = {
+                    "description": lowest.get("description", ""),
+                    "totalPrice": lowest.get("totalPrice", 0)
+                }
+            
         except Exception as e:
-            print(f"Error parsing financial data: {e}")
+            print(f"Error in comprehensive invoice extraction: {e}")
+            import traceback
+            traceback.print_exc()
+            financial_info = {}
+            line_items_info = {"lineItems": [], "lineItemsSummary": {}}
+            calculation_errors = [{"title": "Extraction Error", "message": str(e)}]
         
-        # 2. Detailed risk and compliance analysis
-        risk_template = """Perform a comprehensive risk and compliance analysis of this invoice.
+        # 2. Risk and compliance analysis using extracted data
+        risk_template = """Perform a comprehensive risk and compliance analysis of this invoice using the extracted data.
 
 Invoice Document: {{context}}
 
-Return a JSON object with: risks (array of risk objects with title, description, severity, category, evidence, impact, recommendation, affectedAmount), complianceIssues (array), calculationErrors (array), missingInformation (array), duplicateCharges (array), suspiciousPatterns (array).
+Extracted Financial Data:
+- Vendor: {vendor_name}
+- Buyer: {buyer_name}
+- Total Amount: {currency} {total_amount}
+- Subtotal: {currency} {subtotal}
+- Taxes: {currency} {total_tax}
+- Discount: {currency} {discount}
+- Shipping: {currency} {shipping}
+- Line Items Count: {line_items_count}
+
+Return a JSON object with: risks (array of risk objects with title, description, severity, category, evidence, impact, recommendation, affectedAmount), complianceIssues (array), missingInformation (array), duplicateCharges (array), suspiciousPatterns (array).
 
 Each risk object should have: title, description (3-5 sentences), severity (high/medium/low), category, evidence, impact, recommendation, affectedAmount.
 
 Return ONLY valid JSON, no additional text.
 """
+            
+        formatted_risk_template = risk_template.replace("{{context}}", "{context}").format(
+            vendor_name=financial_info.get("vendorName", "Unknown"),
+            buyer_name=financial_info.get("buyerName", "Unknown"),
+            currency=financial_info.get("currency", ""),
+            total_amount=financial_info.get("totalAmount", 0),
+            subtotal=financial_info.get("subtotal", 0),
+            total_tax=sum(tax.get("taxAmount", 0) or 0 for tax in financial_info.get("taxBreakdown", [])),
+            discount=financial_info.get("discount", 0),
+            shipping=financial_info.get("shippingCharges", 0),
+            line_items_count=line_items_info.get("lineItemsSummary", {}).get("totalItems", 0)
+        )
         
-        prompt = PromptTemplate.from_template(risk_template)
+        prompt = PromptTemplate.from_template(formatted_risk_template)
         chain = prompt | self.llm | self.output_parser
-        risk_data = chain.invoke({"context": content[:10000]})
+        risk_data = chain.invoke({"context": content[:8000]})
         
-        risk_info = {"risks": [], "complianceIssues": [], "calculationErrors": [], "missingInformation": [], "duplicateCharges": [], "suspiciousPatterns": []}
+        risk_info = {"risks": [], "complianceIssues": [], "missingInformation": [], "duplicateCharges": [], "suspiciousPatterns": []}
         try:
             if risk_data.strip().startswith('{'):
                 risk_info = json.loads(risk_data)
@@ -196,50 +351,35 @@ Return ONLY valid JSON, no additional text.
         except Exception as e:
             print(f"Error parsing risk data: {e}")
         
-        # 3. Detailed line item analysis
-        line_items_template = """Analyze all line items in this invoice in detail.
+        # Add calculation errors to risk info
+        risk_info["calculationErrors"] = calculation_errors
+    
+        # 3. Payment and terms analysis using extracted data
+        payment_template = """Analyze payment terms and payment-related information from this invoice.
 
 Invoice Document: {{context}}
 
-Return a JSON object with:
-- lineItems: array of line item objects, each with: itemNumber, description, quantity, unitPrice, totalPrice, taxRate, taxAmount, category, notes
-- lineItemsSummary: object with: totalItems (total number of line items), categories (array of categories with item counts), highestValueItem, lowestValueItem, averageItemValue
+Extracted Data:
+- Payment Terms: {payment_terms}
+- Due Date: {due_date}
+- Payment Method: {payment_method}
+- Transaction ID: {transaction_id}
+
+Return a JSON object with: paymentTerms (object with terms, dueDate, daysUntilDue, earlyPaymentDiscount, latePaymentPenalty, paymentMethods), paymentStatus, bankDetails (object with accountNumber, bankName, ifscCode, swiftCode if found in document), recommendations (array).
 
 Return ONLY valid JSON, no additional text.
 """
+            
+        formatted_payment_template = payment_template.replace("{{context}}", "{context}").format(
+            payment_terms=financial_info.get("paymentTerms", ""),
+            due_date=financial_info.get("dueDate", ""),
+            payment_method=financial_info.get("paymentMethod", ""),
+            transaction_id=financial_info.get("paymentTransactionID", "")
+        )
         
-        # Replace double braces with single for context variable
-        formatted_template = line_items_template.replace("{{context}}", "{context}")
-        prompt = PromptTemplate.from_template(formatted_template)
+        prompt = PromptTemplate.from_template(formatted_payment_template)
         chain = prompt | self.llm | self.output_parser
-        line_items_data = chain.invoke({"context": content[:8000]})  # Reduced for speed
-        
-        line_items_info = {"lineItems": [], "lineItemsSummary": {}}
-        try:
-            if line_items_data.strip().startswith('{'):
-                line_items_info = json.loads(line_items_data)
-            else:
-                json_match = re.search(r'\{.*\}', line_items_data, re.DOTALL)
-                if json_match:
-                    line_items_info = json.loads(json_match.group())
-        except Exception as e:
-            print(f"Error parsing line items data: {e}")
-        
-        # 4. Payment and terms analysis
-        payment_template = """Analyze payment terms, conditions, and payment-related information in this invoice.
-
-Invoice Document: {{context}}
-
-Return a JSON object with: paymentTerms (object with terms, dueDate, daysUntilDue, earlyPaymentDiscount, latePaymentPenalty, paymentMethods), paymentStatus, paymentHistory, bankDetails (object with accountNumber, bankName, ifscCode, swiftCode), recommendations (array).
-
-Return ONLY valid JSON, no additional text.
-"""
-        
-        # Replace double braces with single for context variable
-        formatted_template = payment_template.replace("{{context}}", "{context}")
-        prompt = PromptTemplate.from_template(formatted_template)
-        chain = prompt | self.llm | self.output_parser
-        payment_data = chain.invoke({"context": content[:10000]})
+        payment_data = chain.invoke({"context": content[:8000]})
         
         payment_info = {}
         try:
@@ -252,21 +392,40 @@ Return ONLY valid JSON, no additional text.
         except Exception as e:
             print(f"Error parsing payment data: {e}")
         
-        # 5. Enhanced summary with all key details
-        summary_template = """Create a comprehensive, detailed summary of this invoice that includes all important information.
-
-Invoice Document: {{context}}
-
-Create a detailed summary (3-5 paragraphs) that includes: Overview of the invoice (vendor, buyer, invoice number, dates), Total amount and currency, Breakdown of charges (subtotal, taxes, discounts, shipping), Number of line items and key items/services, Payment terms and due date, Any notable issues, risks, or concerns, Key compliance information (GST, PAN numbers if applicable), Recommendations for the buyer.
-
-Return the summary as plain text (not JSON).
-"""
+        # 4. Create accurate summary using extracted data
+        vendor_name = financial_info.get("vendorName", "Unknown Vendor")
+        buyer_name = financial_info.get("buyerName", "Unknown Buyer")
+        invoice_num = financial_info.get("invoiceNumber", "N/A")
+        invoice_date = financial_info.get("invoiceDate", "N/A")
+        due_date = financial_info.get("dueDate", "N/A")
+        currency = financial_info.get("currency", "")
+        total = financial_info.get("totalAmount", 0)
+        subtotal = financial_info.get("subtotal", 0)
+        total_tax = sum(tax.get("taxAmount", 0) or 0 for tax in financial_info.get("taxBreakdown", []))
+        discount = financial_info.get("discount", 0)
+        shipping = financial_info.get("shippingCharges", 0)
+        line_items_count = line_items_info.get("lineItemsSummary", {}).get("totalItems", 0)
+        payment_terms = financial_info.get("paymentTerms", "Not specified")
         
-        # Replace double braces with single for context variable
-        formatted_template = summary_template.replace("{{context}}", "{context}")
-        prompt = PromptTemplate.from_template(formatted_template)
-        chain = prompt | self.llm | self.output_parser
-        detailed_summary = chain.invoke({"context": content[:8000]})  # Reduced for speed
+        detailed_summary = f"This invoice is from {vendor_name} to {buyer_name}, with invoice number {invoice_num}, dated {invoice_date}, and due on {due_date}. "
+        detailed_summary += f"The total amount is {currency} {total}. "
+        detailed_summary += f"The breakdown includes a subtotal of {currency} {subtotal}, "
+        if total_tax > 0:
+            detailed_summary += f"taxes totaling {currency} {total_tax}, "
+        if discount > 0:
+            detailed_summary += f"a discount of {currency} {discount}, "
+        if shipping > 0:
+            detailed_summary += f"and shipping charges of {currency} {shipping}. "
+        detailed_summary += f"The invoice contains {line_items_count} line item(s). "
+        detailed_summary += f"Payment terms are: {payment_terms}. "
+        
+        if financial_info.get("vendorGST") or financial_info.get("vendorPAN"):
+            detailed_summary += f"Vendor GST: {financial_info.get('vendorGST', 'N/A')}, PAN: {financial_info.get('vendorPAN', 'N/A')}. "
+        if financial_info.get("buyerGST") or financial_info.get("buyerPAN"):
+            detailed_summary += f"Buyer GST: {financial_info.get('buyerGST', 'N/A')}, PAN: {financial_info.get('buyerPAN', 'N/A')}. "
+        
+        if calculation_errors:
+            detailed_summary += f"Note: {len(calculation_errors)} calculation discrepancy(ies) detected. Please verify the invoice totals carefully."
         
         # Extract tables
         tables = self.extract_tables(retriever)
