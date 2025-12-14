@@ -136,10 +136,76 @@ function displayInvoiceResults(containerId, data) {
   
   let html = '<div class="result-card fade-in"><h3 class="result-header">📊 Invoice Analysis</h3>';
   
+  // Detailed Summary
   if (data.summary) {
-    html += '<div class="result-section"><h4>📝 Summary:</h4><p>' + data.summary + '</p></div>';
+    html += '<div class="result-section"><h4>📝 Detailed Summary:</h4><p style="line-height: 1.8; white-space: pre-wrap;">' + data.summary + '</p></div>';
   }
   
+  // Financial Details Section
+  if (data.financialDetails) {
+    const fd = data.financialDetails;
+    html += '<div class="result-section" style="background: #f0f9ff; border-left: 4px solid #3E98FF;"><h4>💰 Financial Details:</h4>';
+    html += '<div class="financial-grid">';
+    
+    if (fd.invoiceNumber) html += `<div class="financial-item"><strong>Invoice Number:</strong> ${fd.invoiceNumber}</div>`;
+    if (fd.invoiceDate) html += `<div class="financial-item"><strong>Invoice Date:</strong> ${fd.invoiceDate}</div>`;
+    if (fd.dueDate) html += `<div class="financial-item"><strong>Due Date:</strong> ${fd.dueDate}</div>`;
+    if (fd.vendorName) html += `<div class="financial-item"><strong>Vendor:</strong> ${fd.vendorName}</div>`;
+    if (fd.buyerName) html += `<div class="financial-item"><strong>Buyer:</strong> ${fd.buyerName}</div>`;
+    if (fd.subtotal) html += `<div class="financial-item"><strong>Subtotal:</strong> ${fd.currency || ''} ${fd.subtotal}</div>`;
+    
+    if (fd.taxBreakdown && fd.taxBreakdown.length > 0) {
+      html += '<div class="financial-item" style="grid-column: 1 / -1;"><strong>Tax Breakdown:</strong><ul style="margin: 0.5rem 0; padding-left: 1.5rem;">';
+      fd.taxBreakdown.forEach(tax => {
+        html += `<li>${tax.taxType || 'Tax'}: ${tax.taxRate || ''}% = ${fd.currency || ''} ${tax.taxAmount || ''} (on ${fd.currency || ''} ${tax.taxableAmount || ''})</li>`;
+      });
+      html += '</ul></div>';
+    }
+    
+    if (fd.discount) html += `<div class="financial-item"><strong>Discount:</strong> ${fd.currency || ''} ${fd.discount}</div>`;
+    if (fd.shippingCharges) html += `<div class="financial-item"><strong>Shipping:</strong> ${fd.currency || ''} ${fd.shippingCharges}</div>`;
+    if (fd.totalAmount) html += `<div class="financial-item" style="font-size: 1.2rem; font-weight: bold; color: #6C5DD3; grid-column: 1 / -1; border-top: 2px solid #e0e0e0; padding-top: 0.5rem; margin-top: 0.5rem;"><strong>Total Amount:</strong> ${fd.currency || ''} ${fd.totalAmount}</div>`;
+    if (fd.paymentTerms) html += `<div class="financial-item"><strong>Payment Terms:</strong> ${fd.paymentTerms}</div>`;
+    if (fd.paymentTransactionID) html += `<div class="financial-item"><strong>Transaction ID:</strong> ${fd.paymentTransactionID}</div>`;
+    
+    html += '</div></div>';
+  }
+  
+  // Line Items Analysis
+  if (data.lineItemsAnalysis && data.lineItemsAnalysis.lineItems && data.lineItemsAnalysis.lineItems.length > 0) {
+    html += '<div class="result-section"><h4>📦 Detailed Line Items:</h4>';
+    html += '<table class="invoice-table"><thead><tr>';
+    html += '<th>#</th><th>Description</th><th>Quantity</th><th>Unit Price</th><th>Tax Rate</th><th>Tax Amount</th><th>Total</th><th>Category</th>';
+    html += '</tr></thead><tbody>';
+    
+    data.lineItemsAnalysis.lineItems.forEach((item, idx) => {
+      html += '<tr>';
+      html += `<td>${item.itemNumber || idx + 1}</td>`;
+      html += `<td>${item.description || ''}</td>`;
+      html += `<td>${item.quantity || ''}</td>`;
+      html += `<td>${data.financialDetails?.currency || ''} ${item.unitPrice || ''}</td>`;
+      html += `<td>${item.taxRate || '-'}</td>`;
+      html += `<td>${data.financialDetails?.currency || ''} ${item.taxAmount || '-'}</td>`;
+      html += `<td>${data.financialDetails?.currency || ''} ${item.totalPrice || ''}</td>`;
+      html += `<td>${item.category || ''}</td>`;
+      html += '</tr>';
+    });
+    
+    html += '</tbody></table>';
+    
+    if (data.lineItemsAnalysis.lineItemsSummary) {
+      const summary = data.lineItemsAnalysis.lineItemsSummary;
+      html += '<div style="margin-top: 1rem; padding: 1rem; background: #f8f9ff; border-radius: 8px;">';
+      html += `<p><strong>Total Items:</strong> ${summary.totalItems || ''}</p>`;
+      if (summary.averageItemValue) html += `<p><strong>Average Item Value:</strong> ${data.financialDetails?.currency || ''} ${summary.averageItemValue}</p>`;
+      if (summary.highestValueItem) html += `<p><strong>Highest Value Item:</strong> ${summary.highestValueItem}</p>`;
+      html += '</div>';
+    }
+    
+    html += '</div>';
+  }
+  
+  // Tables (fallback if lineItemsAnalysis not available)
   if (data.tables && data.tables.length > 0) {
     data.tables.forEach((table, idx) => {
       html += '<div class="result-section"><h4>📋 ' + (table.tableName || 'Table ' + (idx + 1)) + ':</h4>';
@@ -161,19 +227,102 @@ function displayInvoiceResults(containerId, data) {
     });
   }
   
+  // Payment Analysis
+  if (data.paymentAnalysis) {
+    const pa = data.paymentAnalysis;
+    html += '<div class="result-section" style="background: #f0fff4; border-left: 4px solid #28a745;"><h4>💳 Payment Analysis:</h4>';
+    if (pa.paymentTerms) {
+      html += '<div style="margin: 0.5rem 0;"><strong>Payment Terms:</strong> ' + (pa.paymentTerms.terms || pa.paymentTerms) + '</div>';
+      if (pa.paymentTerms.dueDate) html += '<div style="margin: 0.5rem 0;"><strong>Due Date:</strong> ' + pa.paymentTerms.dueDate + '</div>';
+      if (pa.paymentTerms.daysUntilDue !== undefined) html += '<div style="margin: 0.5rem 0;"><strong>Days Until Due:</strong> ' + pa.paymentTerms.daysUntilDue + '</div>';
+      if (pa.paymentTerms.earlyPaymentDiscount) html += '<div style="margin: 0.5rem 0;"><strong>Early Payment Discount:</strong> ' + pa.paymentTerms.earlyPaymentDiscount + '</div>';
+      if (pa.paymentTerms.latePaymentPenalty) html += '<div style="margin: 0.5rem 0;"><strong>Late Payment Penalty:</strong> ' + pa.paymentTerms.latePaymentPenalty + '</div>';
+    }
+    if (pa.bankDetails) {
+      html += '<div style="margin-top: 1rem;"><strong>Bank Details:</strong><ul style="margin: 0.5rem 0; padding-left: 1.5rem;">';
+      if (pa.bankDetails.bankName) html += '<li>Bank: ' + pa.bankDetails.bankName + '</li>';
+      if (pa.bankDetails.accountNumber) html += '<li>Account: ' + pa.bankDetails.accountNumber + '</li>';
+      if (pa.bankDetails.ifscCode) html += '<li>IFSC: ' + pa.bankDetails.ifscCode + '</li>';
+      html += '</ul></div>';
+    }
+    if (pa.recommendations && pa.recommendations.length > 0) {
+      html += '<div style="margin-top: 1rem;"><strong>Payment Recommendations:</strong><ul style="margin: 0.5rem 0; padding-left: 1.5rem;">';
+      pa.recommendations.forEach(rec => html += '<li>' + rec + '</li>');
+      html += '</ul></div>';
+    }
+    html += '</div>';
+  }
+  
+  // Risks and Suspicious Charges
   if (data.risks && data.risks.length > 0) {
-    html += '<div class="result-section error-card"><h4>⚠️ Suspicious Charges:</h4><ul>';
+    html += '<div class="result-section error-card"><h4>⚠️ Suspicious Charges & Risks:</h4>';
     data.risks.forEach(risk => {
       if (typeof risk === 'object' && risk !== null) {
-        // Handle object format with title, description, severity
         const title = risk.title || risk.name || 'Risk';
         const description = risk.description || risk.details || '';
         const severity = risk.severity || risk.level || '';
+        const category = risk.category || '';
+        const evidence = risk.evidence || '';
+        const impact = risk.impact || '';
+        const recommendation = risk.recommendation || '';
+        const affectedAmount = risk.affectedAmount || '';
+        
         const severityBadge = severity ? `<span class="severity-badge severity-${severity.toLowerCase()}">${severity}</span>` : '';
-        html += `<li><strong>${title}</strong> ${severityBadge}${description ? ': ' + description : ''}</li>`;
+        const categoryBadge = category ? `<span style="background: #e0e7ff; color: #6C5DD3; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; margin-left: 0.5rem;">${category}</span>` : '';
+        
+        html += `<div style="margin: 1rem 0; padding: 1rem; background: ${severity === 'high' ? '#fee' : severity === 'medium' ? '#fff9e6' : '#e8f5e9'}; border-radius: 8px; border-left: 4px solid ${severity === 'high' ? '#c33' : severity === 'medium' ? '#ffc107' : '#4caf50'};"><strong>${title}</strong> ${severityBadge}${categoryBadge}`;
+        if (description) html += `<p style="margin: 0.5rem 0; line-height: 1.6;">${description}</p>`;
+        if (evidence) html += `<p style="margin: 0.5rem 0; font-style: italic; color: #666;"><strong>Evidence:</strong> ${evidence}</p>`;
+        if (impact) html += `<p style="margin: 0.5rem 0;"><strong>Impact:</strong> ${impact}</p>`;
+        if (affectedAmount) html += `<p style="margin: 0.5rem 0;"><strong>Affected Amount:</strong> ${affectedAmount}</p>`;
+        if (recommendation) html += `<p style="margin: 0.5rem 0; color: #6C5DD3;"><strong>Recommendation:</strong> ${recommendation}</p>`;
+        html += '</div>';
       } else {
-        // Handle string format
         html += '<li>' + risk + '</li>';
+      }
+    });
+    html += '</div>';
+  }
+  
+  // Compliance Issues
+  if (data.complianceIssues && data.complianceIssues.length > 0) {
+    html += '<div class="result-section warning-card"><h4>⚖️ Compliance Issues:</h4><ul>';
+    data.complianceIssues.forEach(issue => {
+      if (typeof issue === 'object') {
+        html += `<li><strong>${issue.title || issue}</strong>: ${issue.description || issue.details || ''}</li>`;
+      } else {
+        html += '<li>' + issue + '</li>';
+      }
+    });
+    html += '</ul></div>';
+  }
+  
+  // Calculation Errors
+  if (data.calculationErrors && data.calculationErrors.length > 0) {
+    html += '<div class="result-section error-card"><h4>🔢 Calculation Errors:</h4><ul>';
+    data.calculationErrors.forEach(error => {
+      html += '<li>' + error + '</li>';
+    });
+    html += '</ul></div>';
+  }
+  
+  // Missing Information
+  if (data.missingInformation && data.missingInformation.length > 0) {
+    html += '<div class="result-section warning-card"><h4>📋 Missing Information:</h4><ul>';
+    data.missingInformation.forEach(info => {
+      html += '<li>' + info + '</li>';
+    });
+    html += '</ul></div>';
+  }
+  
+  // Suspicious Patterns
+  if (data.suspiciousPatterns && data.suspiciousPatterns.length > 0) {
+    html += '<div class="result-section error-card"><h4>🔍 Suspicious Patterns:</h4><ul>';
+    data.suspiciousPatterns.forEach(pattern => {
+      if (typeof pattern === 'object') {
+        html += `<li><strong>${pattern.title || pattern}</strong>: ${pattern.description || pattern.details || ''}</li>`;
+      } else {
+        html += '<li>' + pattern + '</li>';
       }
     });
     html += '</ul></div>';
@@ -283,6 +432,25 @@ function copyResult() {
   background: #e8f5e9;
   color: #2e7d32;
   border: 1px solid #4caf50;
+}
+
+.financial-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.financial-item {
+  padding: 0.75rem;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+}
+
+.warning-card {
+  background: #fff9e6;
+  border-left: 4px solid #ffc107;
 }
 </style>
 {% endblock %}
