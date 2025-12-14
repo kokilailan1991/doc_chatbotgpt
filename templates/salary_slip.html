@@ -160,6 +160,10 @@ function displaySalaryResults(containerId, data) {
   
   let html = '<div class="result-card fade-in"><h3 class="result-header">💰 Salary Slip Analysis</h3>';
   
+  // Initialize totals at the beginning
+  let totalEarnings = 0;
+  let totalDeductions = 0;
+  
   // Summary Section
   if (data.summary) {
     html += '<div class="result-section summary-card"><h4>📝 Summary:</h4><p>' + data.summary + '</p></div>';
@@ -169,7 +173,6 @@ function displaySalaryResults(containerId, data) {
   if (data.salaryData && data.salaryData.length > 0) {
     html += '<div class="result-section salary-data-card"><h4>💰 Salary/Earnings:</h4>';
     html += '<table class="salary-table"><thead><tr><th>Component</th><th>Amount</th></tr></thead><tbody>';
-    let totalEarnings = 0;
     data.salaryData.forEach(item => {
       const component = typeof item === 'object' ? (item.component || item.name || '') : item;
       const amount = typeof item === 'object' ? (item.amount || '') : '';
@@ -187,7 +190,6 @@ function displaySalaryResults(containerId, data) {
   if (data.expensesData && data.expensesData.length > 0) {
     html += '<div class="result-section expenses-data-card"><h4>📉 Deductions/Expenses:</h4>';
     html += '<table class="salary-table"><thead><tr><th>Component</th><th>Amount</th></tr></thead><tbody>';
-    let totalDeductions = 0;
     data.expensesData.forEach(item => {
       const component = typeof item === 'object' ? (item.component || item.name || '') : item;
       const amount = typeof item === 'object' ? (item.amount || '') : '';
@@ -199,8 +201,10 @@ function displaySalaryResults(containerId, data) {
     });
     html += `<tr class="total-row"><td><strong>Total Deductions</strong></td><td><strong>₹${totalDeductions.toLocaleString('en-IN')}</strong></td></tr>`;
     html += '</tbody></table></div>';
-    
-    // Calculate and show Net Pay
+  }
+  
+  // Calculate and show Net Pay (after both sections)
+  if (totalEarnings > 0 || totalDeductions > 0) {
     const netPay = totalEarnings - totalDeductions;
     if (netPay > 0) {
       html += `<div class="result-section net-pay-card"><h4>💵 Net Pay:</h4><p class="net-pay-amount">₹${netPay.toLocaleString('en-IN')}</p></div>`;
