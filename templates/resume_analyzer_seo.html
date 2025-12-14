@@ -512,6 +512,74 @@ function copyResult() {
   }
 }
 </script>
+
+<style>
+/* Resume Analyzer specific styles */
+.ats-score-card {
+  background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+  border-left: 4px solid #4CAF50;
+  text-align: center;
+}
+
+.ats-score-display {
+  margin: 1rem 0;
+}
+
+.breakdown-card {
+  background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+  border-left: 4px solid #2196F3;
+}
+
+.match-card {
+  background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
+  border-left: 4px solid #FF9800;
+}
+
+.match-score {
+  margin: 1rem 0;
+}
+
+.rewritten-card {
+  background: linear-gradient(135deg, #F3E5F5 0%, #E1BEE7 100%);
+  border-left: 4px solid #9C27B0;
+}
+
+.rewritten-content {
+  max-height: 500px;
+  overflow-y: auto;
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.keywords-card {
+  background: linear-gradient(135deg, #E0F2F1 0%, #B2DFDB 100%);
+  border-left: 4px solid #009688;
+}
+
+.keywords-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.keyword-tag {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 1px solid #009688;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  color: #009688;
+  font-weight: 500;
+}
+
+.summary-card {
+  background: linear-gradient(135deg, #E8EAF6 0%, #C5CAE9 100%);
+  border-left: 4px solid #3F51B5;
+}
+</style>
 {% endblock %}
 
 
