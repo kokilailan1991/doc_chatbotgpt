@@ -220,6 +220,12 @@ function displayPDFResults(containerId, data, type) {
     return;
   }
   
+  // If data is empty or invalid, show message
+  if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) {
+    container.innerHTML = '<div class="error-message">❌ No data received. Please try again.</div>';
+    return;
+  }
+  
   let html = '<div class="result-card fade-in"><h3 class="result-header">📄 PDF Analysis Results</h3>';
   
   if (type === "summary" || type === "full") {
@@ -230,8 +236,19 @@ function displayPDFResults(containerId, data, type) {
     const insights = data.keyInsights || data.keyFindings || [];
     if (insights.length > 0) {
       html += '<div class="result-section suggestion-card"><h4>💡 Key Insights:</h4><ul>';
-      insights.forEach(insight => html += '<li>' + insight + '</li>');
+      insights.forEach(insight => {
+        if (typeof insight === 'string') {
+          html += '<li>' + insight + '</li>';
+        } else if (insight.title) {
+          html += '<li><strong>' + insight.title + ':</strong> ' + (insight.description || '') + '</li>';
+        } else {
+          html += '<li>' + JSON.stringify(insight) + '</li>';
+        }
+      });
       html += '</ul></div>';
+    } else if (data.summary && type === "insights") {
+      // Fallback: show summary if no insights found
+      html += '<div class="result-section suggestion-card"><h4>💡 Key Insights:</h4><p>' + data.summary + '</p></div>';
     }
   }
   
@@ -239,8 +256,27 @@ function displayPDFResults(containerId, data, type) {
     const risks = data.risks || [];
     if (risks.length > 0) {
       html += '<div class="result-section error-card"><h4>⚠️ Risks & Red Flags:</h4><ul>';
-      risks.forEach(risk => html += '<li>' + risk + '</li>');
+      risks.forEach(risk => {
+        if (typeof risk === 'string') {
+          html += '<li>' + risk + '</li>';
+        } else if (risk.title || risk.description) {
+          const severity = risk.severity ? ' <span style="color: ' + (risk.severity === 'high' ? '#dc3545' : risk.severity === 'medium' ? '#ffc107' : '#28a745') + ';">[' + risk.severity.toUpperCase() + ']</span>' : '';
+          html += '<li><strong>' + (risk.title || 'Risk') + ':</strong> ' + (risk.description || '') + severity;
+          if (risk.mitigation) {
+            html += '<br><em>Mitigation: ' + risk.mitigation + '</em>';
+          }
+          html += '</li>';
+        } else {
+          html += '<li>' + JSON.stringify(risk) + '</li>';
+        }
+      });
       html += '</ul></div>';
+      if (data.overallRiskLevel) {
+        html += '<div class="result-section"><p><strong>Overall Risk Level:</strong> <span style="color: ' + (data.overallRiskLevel === 'high' ? '#dc3545' : data.overallRiskLevel === 'medium' ? '#ffc107' : '#28a745') + ';">' + data.overallRiskLevel.toUpperCase() + '</span></p></div>';
+      }
+    } else if (data.summary && type === "risks") {
+      // Fallback: show message if no risks found
+      html += '<div class="result-section suggestion-card"><h4>⚠️ Risks & Red Flags:</h4><p>No significant risks identified in this document.</p></div>';
     }
   }
   
@@ -248,8 +284,27 @@ function displayPDFResults(containerId, data, type) {
     const actions = data.actionItems || [];
     if (actions.length > 0) {
       html += '<div class="result-section suggestion-card"><h4>✅ Action Items:</h4><ul>';
-      actions.forEach(action => html += '<li>' + action + '</li>');
+      actions.forEach(action => {
+        if (typeof action === 'string') {
+          html += '<li>' + action + '</li>';
+        } else if (action.title || action.description) {
+          const priority = action.priority ? ' <span style="color: ' + (action.priority === 'high' ? '#dc3545' : action.priority === 'medium' ? '#ffc107' : '#28a745') + ';">[' + action.priority.toUpperCase() + ']</span>' : '';
+          html += '<li><strong>' + (action.title || 'Action') + ':</strong> ' + (action.description || '') + priority;
+          if (action.assignee) {
+            html += '<br><em>Assignee: ' + action.assignee + '</em>';
+          }
+          if (action.dueDate) {
+            html += '<br><em>Due: ' + action.dueDate + '</em>';
+          }
+          html += '</li>';
+        } else {
+          html += '<li>' + JSON.stringify(action) + '</li>';
+        }
+      });
       html += '</ul></div>';
+    } else if (data.summary && type === "actions") {
+      // Fallback: show message if no actions found
+      html += '<div class="result-section suggestion-card"><h4>✅ Action Items:</h4><p>No specific action items identified. Review the document summary for next steps.</p></div>';
     }
   }
   
