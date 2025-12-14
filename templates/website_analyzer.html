@@ -152,30 +152,56 @@
 <script>
 async function tryDemo() {
   const url = "https://aigpt.co.in";
-  const res = await fetch("/api/website/analyze", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url })
-  });
-  const data = await res.json();
-  document.getElementById("demoResults").innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+  document.getElementById("demoResults").innerHTML = '<div class="loading">⏳ Analyzing demo website...</div>';
+  
+  try {
+    const res = await fetch("/api/analyze-website", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url })
+    });
+    const data = await res.json();
+    
+    if (data.error) {
+      document.getElementById("demoResults").innerHTML = `<div class="error-message">❌ ${data.error}</div>`;
+    } else {
+      document.getElementById("demoResults").innerHTML = `<pre class="result-json">${JSON.stringify(data, null, 2)}</pre>`;
+    }
+  } catch (error) {
+    document.getElementById("demoResults").innerHTML = `<div class="error-message">❌ Error: ${error.message}</div>`;
+  }
 }
 
 document.getElementById("urlForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const url = document.getElementById("urlInput").value;
   
-  document.getElementById("status").innerText = "Analyzing website...";
+  if (!url) {
+    document.getElementById("status").innerText = "Please enter a URL";
+    return;
+  }
   
-  const res = await fetch("/api/website/analyze", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url })
-  });
+  document.getElementById("status").innerText = "⏳ Analyzing website...";
+  document.getElementById("results").innerHTML = "";
   
-  const data = await res.json();
-  document.getElementById("status").innerText = data.error || "Analysis complete!";
-  displayResults(data);
+  try {
+    const res = await fetch("/api/analyze-website", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url })
+    });
+    
+    const data = await res.json();
+    
+    if (data.error) {
+      document.getElementById("status").innerText = `❌ ${data.error}`;
+    } else {
+      document.getElementById("status").innerText = "✅ Analysis complete!";
+      displayResults(data);
+    }
+  } catch (error) {
+    document.getElementById("status").innerText = `❌ Error: ${error.message}`;
+  }
 });
 
 function displayResults(data) {
@@ -199,5 +225,10 @@ function displayResults(data) {
 }
 </script>
 {% endblock %}
+
+
+
+
+
 
 

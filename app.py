@@ -528,6 +528,20 @@ def website_analyzer_page():
                          meta_description="Paste any URL. Get instant SEO insights, structure breakdown, and recommendations.",
                          meta_keywords="website analyzer, SEO analyzer, content analyzer, website SEO checker")
 
+@app.route("/privacy", methods=["GET"])
+def privacy_page():
+    return render_template("about.html",
+                         page_title="Privacy Policy - AIGPT Technologies",
+                         meta_description="Privacy policy for AIGPT Technologies AI Document Chatbot platform.",
+                         meta_keywords="privacy policy, data protection, AIGPT Technologies")
+
+@app.route("/terms", methods=["GET"])
+def terms_page():
+    return render_template("about.html",
+                         page_title="Terms of Service - AIGPT Technologies",
+                         meta_description="Terms of service for AIGPT Technologies AI Document Chatbot platform.",
+                         meta_keywords="terms of service, user agreement, AIGPT Technologies")
+
 @app.route("/api/analyze-edi", methods=["POST"])
 def analyze_edi():
     """Analyze EDI document - NEW endpoint with proper text handling"""

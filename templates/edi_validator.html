@@ -24,41 +24,77 @@
 <script>
 document.getElementById("ediUploadForm").addEventListener("submit", async (e) => {
   e.preventDefault();
+  const file = document.getElementById("ediFile").files[0];
+  if (!file) {
+    document.getElementById("status").innerText = "Please select a file";
+    return;
+  }
+  
   const formData = new FormData();
-  formData.append("file", document.getElementById("ediFile").files[0]);
+  formData.append("file", file);
   
-  const res = await fetch("/upload", { method: "POST", body: formData });
-  const data = await res.json();
-  document.getElementById("status").innerText = data.message || data.error;
+  document.getElementById("status").innerText = "⏳ Analyzing EDI file...";
+  document.getElementById("results").innerHTML = "";
   
-  if (data.message) {
-    const analysisRes = await fetch("/api/edi/analyze", {
+  try {
+    const res = await fetch("/api/analyze-edi", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({})
+      body: formData
     });
-    const analysisData = await analysisRes.json();
-    displayResults(analysisData);
+    const data = await res.json();
+    
+    if (data.error) {
+      document.getElementById("status").innerText = `❌ ${data.error}`;
+    } else {
+      document.getElementById("status").innerText = "✅ EDI file analyzed successfully!";
+      displayResults(data);
+    }
+  } catch (error) {
+    document.getElementById("status").innerText = `❌ Error: ${error.message}`;
   }
 });
 
 function displayResults(data) {
   const container = document.getElementById("results");
-  container.innerHTML = `
-    <div class="result-card">
-      <h3>Analysis Results</h3>
-      <div class="result-section">
-        <h4>Format Type: ${data.formatType || 'Unknown'}</h4>
-        <h4>Validation:</h4>
-        <p>Valid: ${data.validation?.isValid ? 'Yes' : 'No'}</p>
-        <p>Errors: ${JSON.stringify(data.validation?.errors || [])}</p>
-        <p>Warnings: ${JSON.stringify(data.validation?.warnings || [])}</p>
-      </div>
-      <pre>${JSON.stringify(data, null, 2)}</pre>
-    </div>
-  `;
+  let html = '<div class="result-card fade-in"><h3 class="result-header">📊 EDI Analysis Results</h3>';
+  
+  const validation = data.validation || {};
+  if (validation.isValid) {
+    html += '<div class="result-section success-card"><h4>✅ Validation: PASSED</h4></div>';
+  } else {
+    html += '<div class="result-section error-card"><h4>❌ Validation: FAILED</h4></div>';
+  }
+  
+  if (validation.errors && validation.errors.length > 0) {
+    html += '<div class="result-section error-card"><h4>❌ Errors:</h4><ul>';
+    validation.errors.forEach(err => html += `<li>${err}</li>`);
+    html += '</ul></div>';
+  }
+  
+  if (validation.warnings && validation.warnings.length > 0) {
+    html += '<div class="result-section warning-card"><h4>⚠️ Warnings:</h4><ul>';
+    validation.warnings.forEach(warn => html += `<li>${warn}</li>`);
+    html += '</ul></div>';
+  }
+  
+  if (data.summary) {
+    html += `<div class="result-section"><h4>📝 Summary:</h4><p>${data.summary}</p></div>`;
+  }
+  
+  if (validation.containersFound > 0) {
+    html += `<div class="result-section"><h4>📦 Containers Found: ${validation.containersFound}</h4></div>`;
+  }
+  
+  html += `<details class="result-section"><summary>View Full JSON</summary><pre class="result-json">${JSON.stringify(data, null, 2)}</pre></details></div>`;
+  
+  container.innerHTML = html;
 }
 </script>
 {% endblock %}
+
+
+
+
+
 
 
