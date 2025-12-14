@@ -751,7 +751,8 @@ def upload_multi():
         embeddings = OpenAIEmbeddings(openai_api_key=openai_key)
         vectordb = FAISS.from_documents(docs, embeddings)
         
-        retriever_cache[file_id] = vectordb.as_retriever()
+        # Create retriever with more documents returned for better content extraction
+        retriever_cache[file_id] = vectordb.as_retriever(search_kwargs={"k": 20})
         file_store[file_id] = {"filename": filename, "uploaded_at": datetime.now().isoformat(), "fileType": "edi" if is_edi_file else "pdf"}
         
         return jsonify({"message": "File uploaded successfully", "file_id": file_id, "fileType": "edi" if is_edi_file else "pdf"})
@@ -1077,7 +1078,8 @@ def upload_file():
         
         embeddings = OpenAIEmbeddings(openai_api_key=openai_key)
         vectordb = FAISS.from_documents(docs, embeddings)
-        retriever_cache["active"] = vectordb.as_retriever()
+        # Create retriever with more documents returned (k=20 for better coverage)
+        retriever_cache["active"] = vectordb.as_retriever(search_kwargs={"k": 20})
 
         return jsonify({"message": "✅ File uploaded and processed successfully.", "fileType": "edi" if is_edi_file else "pdf"})
 

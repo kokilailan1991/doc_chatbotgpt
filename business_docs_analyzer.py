@@ -136,23 +136,129 @@ Return ONLY valid JSON array, no additional text.
         def format_docs(docs):
             return "\n\n".join(doc.page_content for doc in docs)
         
-        # Get full document content
-        docs = retriever.get_relevant_documents("invoice") if hasattr(retriever, 'get_relevant_documents') else []
-        if not docs:
-            docs = retriever.get_relevant_documents("document") if hasattr(retriever, 'get_relevant_documents') else []
-        content = format_docs(docs) if docs else ""
+        # Try multiple strategies to get document content
+        content = ""
+        docs = []
         
-        if not content or len(content.strip()) < 50:
-            return {
-                "documentType": "Invoice",
-                "error": "Could not extract invoice content. Please ensure the document is readable.",
-                "summary": "",
-                "financialDetails": {},
-                "lineItemsAnalysis": {},
-                "paymentAnalysis": {},
-                "riskAnalysis": {},
-                "tables": []
-            }
+        # Strategy 1: Search for invoice-specific terms with more results
+        if hasattr(retriever, 'get_relevant_documents'):
+            try:
+                # Try to get more documents by searching with invoice terms
+                search_queries = [
+                    "invoice bill invoice number vendor buyer amount total payment",
+                    "invoice",
+                    "bill",
+                    "vendor buyer amount"
+                ]
+                for query in search_queries:
+                    try:
+                        # Try to get more documents - check if retriever supports k parameter
+                        if hasattr(retriever, 'search_kwargs') and 'k' in retriever.search_kwargs:
+                            docs = retriever.get_relevant_documents(query)
+                        else:
+                            # Try with explicit k if supported
+                            try:
+                                docs = retriever.get_relevant_documents(query, k=30)
+                            except:
+                                docs = retriever.get_relevant_documents(query)
+                        
+                        if docs:
+                            temp_content = format_docs(docs)
+                            if len(temp_content.strip()) > len(content.strip()):
+                                content = temp_content
+                    except Exception as e:
+                        print(f"Error in query '{query}': {e}")
+                        continue
+            except Exception as e:
+                print(f"Error in invoice search: {e}")
+        
+        # Strategy 2: If still not enough content, try to get more documents
+        if len(content.strip()) < 200:
+            if hasattr(retriever, 'get_relevant_documents'):
+                try:
+                    # Try broader searches
+                    broad_queries = ["document", "text", "content", ""]
+                    for query in broad_queries:
+                        try:
+                            docs = retriever.get_relevant_documents(query)
+                            if docs:
+                                temp_content = format_docs(docs)
+                                if len(temp_content.strip()) > len(content.strip()):
+                                    content = temp_content
+                        except:
+                            continue
+                except Exception as e:
+                    print(f"Error in broad search: {e}")
+        
+        # Strategy 3: Try to access vectorstore directly to get all documents
+        if len(content.strip()) < 200:
+            try:
+                # Check if retriever has vectorstore attribute
+                vectorstore = None
+                if hasattr(retriever, 'vectorstore'):
+                    vectorstore = retriever.vectorstore
+                elif hasattr(retriever, '_vectorstore'):
+                    vectorstore = retriever._vectorstore
+                elif hasattr(retriever, 'vector_store'):
+                    vectorstore = retriever.vector_store
+                
+                if vectorstore:
+                    # Try to get all documents using similarity_search with empty query
+                    try:
+                        all_docs = vectorstore.similarity_search("", k=200)  # Get many documents
+                        if all_docs:
+                            temp_content = format_docs(all_docs)
+                            if len(temp_content.strip()) > len(content.strip()):
+                                content = temp_content
+                    except:
+                        pass
+                    
+                    # Try accessing docstore if available
+                    try:
+                        if hasattr(vectorstore, 'docstore') and hasattr(vectorstore.docstore, '_dict'):
+                            all_docs = list(vectorstore.docstore._dict.values())
+                            if all_docs:
+                                temp_content = format_docs(all_docs)
+                                if len(temp_content.strip()) > len(content.strip()):
+                                    content = temp_content
+                    except:
+                        pass
+            except Exception as e:
+                print(f"Error accessing vectorstore: {e}")
+        
+        # Final check - be more lenient with minimum content
+        if not content or len(content.strip()) < 20:
+            # Try one more time with empty query to get all documents
+            if hasattr(retriever, 'get_relevant_documents'):
+                try:
+                    all_docs = retriever.get_relevant_documents("")
+                    if all_docs:
+                        content = format_docs(all_docs)
+                except:
+                    pass
+            
+            if not content or len(content.strip()) < 20:
+                error_msg = "Could not extract sufficient content from the invoice PDF. "
+                error_msg += "Possible reasons: "
+                error_msg += "1) The PDF might be image-based/scanned (requires OCR), "
+                error_msg += "2) The PDF might be corrupted, "
+                error_msg += "3) The PDF might not contain selectable text. "
+                error_msg += "Please ensure the PDF contains selectable text or try converting it to a text-based PDF."
+                print(f"ERROR: Invoice extraction failed. Content length: {len(content) if content else 0} characters")
+                print(f"Number of docs retrieved: {len(docs) if docs else 0}")
+                return {
+                    "documentType": "Invoice",
+                    "error": error_msg,
+                    "summary": "",
+                    "financialDetails": {},
+                    "lineItemsAnalysis": {},
+                    "paymentAnalysis": {},
+                    "riskAnalysis": {},
+                    "tables": []
+                }
+        
+        # Log content length for debugging
+        print(f"Invoice content extracted: {len(content)} characters from {len(docs) if docs else 0} document chunks")
         
         # Single comprehensive extraction to ensure consistency
         comprehensive_template = """Extract ALL data from this invoice accurately. Extract EXACT values from the document - do NOT create sample or example data.
