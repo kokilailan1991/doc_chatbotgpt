@@ -22,6 +22,7 @@ try:
     from business_docs_analyzer import BusinessDocsAnalyzer
     from website_analyzer import WebsiteAnalyzer
     from contract_analyzer import ContractAnalyzer
+    from salary_slip_analyzer import SalarySlipAnalyzer
 except ImportError as e:
     print(f"Warning: Could not import workflow modules: {e}")
     WorkflowProcessor = None
@@ -31,6 +32,7 @@ except ImportError as e:
     BusinessDocsAnalyzer = None
     WebsiteAnalyzer = None
     ContractAnalyzer = None
+    SalarySlipAnalyzer = None
 
 # Import other dependencies with error handling
 try:
@@ -800,6 +802,29 @@ def contract_analyze():
             return jsonify(analysis)
         else:
             return jsonify({"error": "ContractAnalyzer not available"}), 500
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/salary-slip/analyze", methods=["POST"])
+def salary_slip_analyze():
+    """Professional salary slip analysis endpoint"""
+    try:
+        retriever = retriever_cache.get("active")
+        if not retriever:
+            return jsonify({"error": "Please upload a salary slip first"}), 400
+        
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if not openai_key:
+            return jsonify({"error": "OPENAI_API_KEY not configured"}), 500
+        
+        if SalarySlipAnalyzer:
+            analyzer = SalarySlipAnalyzer(openai_key)
+            analysis = analyzer.analyze_salary_slip(retriever)
+            return jsonify(analysis)
+        else:
+            return jsonify({"error": "SalarySlipAnalyzer not available"}), 500
     except Exception as e:
         import traceback
         traceback.print_exc()

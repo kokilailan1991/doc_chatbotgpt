@@ -4,7 +4,7 @@
 <div class="main-content-wrapper">
   <div class="tool-header">
     <h1 class="tool-title">💰 Salary Slip Analyzer</h1>
-    <p class="tool-subtitle">Extract payroll data: Basic, HRA, PF, deductions, net pay. Find mistakes and tax flags.</p>
+    <p class="tool-subtitle">Professional payroll analysis: extract data, find tax flags, detect mistakes, and get SIP planning recommendations.</p>
   </div>
 
   <button onclick="trySampleSalarySlip()" class="demo-btn-large">✨ Try Sample Salary Slip</button>
@@ -72,9 +72,9 @@ document.getElementById("salaryUploadForm").addEventListener("submit", async (e)
 });
 
 async function analyzeSalary() {
-  document.getElementById("salaryResults").innerHTML = '<div class="loading">⏳ Analyzing salary slip...</div>';
+  document.getElementById("salaryResults").innerHTML = '<div class="loading">⏳ Analyzing salary slip... This may take a minute.</div>';
   try {
-    const res = await fetch("/api/business-docs/analyze", {
+    const res = await fetch("/api/salary-slip/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({})
@@ -101,21 +101,48 @@ async function analyzeSalary() {
 
 async function trySampleSalarySlip() {
   const sampleData = {
-    documentType: "Salary Slip",
-    summary: "Salary slip for January 2024 showing earnings and deductions",
-    tables: [{
-      tableName: "Payroll Details",
-      headers: ["Component", "Amount"],
-      rows: [
-        { Component: "Basic Salary", Amount: "₹50,000" },
-        { Component: "HRA", Amount: "₹20,000" },
-        { Component: "PF", Amount: "₹6,000" },
-        { Component: "Tax Deduction", Amount: "₹5,000" },
-        { Component: "Net Pay", Amount: "₹59,000" }
+    summary: "Salary slip for January 2024 showing gross salary of ₹75,000 with standard deductions for PF, tax, and insurance. Net pay is ₹59,000.",
+    salaryData: [
+      { component: "Basic Salary", amount: "₹50,000" },
+      { component: "HRA", amount: "₹20,000" },
+      { component: "Special Allowance", amount: "₹5,000" },
+      { component: "Total Earnings", amount: "₹75,000" }
+    ],
+    expensesData: [
+      { component: "PF (Provident Fund)", amount: "₹6,000" },
+      { component: "Tax Deduction (TDS)", amount: "₹5,000" },
+      { component: "Insurance", amount: "₹2,000" },
+      { component: "Other Deductions", amount: "₹3,000" },
+      { component: "Total Deductions", amount: "₹16,000" }
+    ],
+    taxFlags: [
+      { title: "HRA Exemption Opportunity", message: "You may be eligible for HRA exemption if you're paying rent. Provide rent receipts to maximize tax savings." },
+      { title: "Section 80C Optimization", message: "Consider investing in ELSS or PPF to maximize Section 80C deductions and reduce tax liability." }
+    ],
+    mistakes: [
+      { title: "PF Calculation Verification", message: "PF deduction (₹6,000) should be verified against standard 12% of Basic Salary. Expected: ₹6,000 (12% of ₹50,000)." },
+      { title: "Tax Deduction Review", message: "TDS of ₹5,000 seems high. Review tax calculations and ensure all exemptions are properly declared." }
+    ],
+    savingsSuggestions: [
+      "Consider investing in ELSS (Equity Linked Savings Scheme) for tax benefits under Section 80C",
+      "Maximize HRA exemption by providing rent receipts if applicable",
+      "Consider investing 20-30% of net salary (₹14,750) in SIP for long-term wealth creation",
+      "Review and optimize tax deductions to maximize take-home salary"
+    ],
+    sipPlanning: {
+      recommendedMonthlySIP: 14750,
+      expectedReturns: {
+        "3years": { invested: 531000, returns: 108000, total: 639000 },
+        "5years": { invested: 885000, returns: 245000, total: 1130000 },
+        "10years": { invested: 1770000, returns: 785000, total: 2555000 }
+      },
+      investmentCategories: [
+        { category: "Large Cap Funds", allocation: "40%", amount: 5900, description: "Stable, established companies" },
+        { category: "Mid Cap Funds", allocation: "30%", amount: 4425, description: "Growth potential with moderate risk" },
+        { category: "Small Cap Funds", allocation: "20%", amount: 2950, description: "High growth potential, higher risk" },
+        { category: "Debt Funds", allocation: "10%", amount: 1475, description: "Stability and liquidity" }
       ]
-    }],
-    risks: ["Verify PF calculation matches standard rate"],
-    actionItems: ["Review tax deductions", "Confirm HRA calculation"]
+    }
   };
   displaySalaryResults("salaryResults", sampleData);
   document.getElementById("salaryStatus").innerHTML = '<div class="success-message">✅ Sample salary slip loaded!</div>';
@@ -133,38 +160,126 @@ function displaySalaryResults(containerId, data) {
   
   let html = '<div class="result-card fade-in"><h3 class="result-header">💰 Salary Slip Analysis</h3>';
   
+  // Summary Section
   if (data.summary) {
-    html += '<div class="result-section"><h4>📝 Summary:</h4><p>' + data.summary + '</p></div>';
+    html += '<div class="result-section summary-card"><h4>📝 Summary:</h4><p>' + data.summary + '</p></div>';
   }
   
-  if (data.tables && data.tables.length > 0) {
-    data.tables.forEach((table, idx) => {
-      html += '<div class="result-section"><h4>📊 ' + (table.tableName || 'Payroll Table') + ':</h4>';
-      if (table.headers && table.rows) {
-        html += '<table class="invoice-table"><thead><tr>';
-        table.headers.forEach(h => html += '<th>' + h + '</th>');
-        html += '</tr></thead><tbody>';
-        table.rows.forEach(row => {
-          html += '<tr>';
-          table.headers.forEach(h => html += '<td>' + (row[h] || '') + '</td>');
-          html += '</tr>';
-        });
-        html += '</tbody></table>';
+  // Salary Data Table
+  if (data.salaryData && data.salaryData.length > 0) {
+    html += '<div class="result-section salary-data-card"><h4>💰 Salary/Earnings:</h4>';
+    html += '<table class="salary-table"><thead><tr><th>Component</th><th>Amount</th></tr></thead><tbody>';
+    let totalEarnings = 0;
+    data.salaryData.forEach(item => {
+      const component = typeof item === 'object' ? (item.component || item.name || '') : item;
+      const amount = typeof item === 'object' ? (item.amount || '') : '';
+      if (amount) {
+        const numAmount = parseFloat(amount.replace(/[₹,$,\s]/g, '')) || 0;
+        totalEarnings += numAmount;
       }
-      html += '</div>';
+      html += `<tr><td>${component}</td><td>${amount}</td></tr>`;
     });
+    html += `<tr class="total-row"><td><strong>Total Earnings</strong></td><td><strong>₹${totalEarnings.toLocaleString('en-IN')}</strong></td></tr>`;
+    html += '</tbody></table></div>';
   }
   
-  if (data.risks && data.risks.length > 0) {
-    html += '<div class="result-section error-card"><h4>⚠️ Tax-Related Flags:</h4><ul>';
-    data.risks.forEach(risk => html += '<li>' + risk + '</li>');
+  // Expenses/Deductions Table
+  if (data.expensesData && data.expensesData.length > 0) {
+    html += '<div class="result-section expenses-data-card"><h4>📉 Deductions/Expenses:</h4>';
+    html += '<table class="salary-table"><thead><tr><th>Component</th><th>Amount</th></tr></thead><tbody>';
+    let totalDeductions = 0;
+    data.expensesData.forEach(item => {
+      const component = typeof item === 'object' ? (item.component || item.name || '') : item;
+      const amount = typeof item === 'object' ? (item.amount || '') : '';
+      if (amount) {
+        const numAmount = parseFloat(amount.replace(/[₹,$,\s]/g, '')) || 0;
+        totalDeductions += numAmount;
+      }
+      html += `<tr><td>${component}</td><td>${amount}</td></tr>`;
+    });
+    html += `<tr class="total-row"><td><strong>Total Deductions</strong></td><td><strong>₹${totalDeductions.toLocaleString('en-IN')}</strong></td></tr>`;
+    html += '</tbody></table></div>';
+    
+    // Calculate and show Net Pay
+    const netPay = totalEarnings - totalDeductions;
+    if (netPay > 0) {
+      html += `<div class="result-section net-pay-card"><h4>💵 Net Pay:</h4><p class="net-pay-amount">₹${netPay.toLocaleString('en-IN')}</p></div>`;
+    }
+  }
+  
+  // Tax Flags - FIXED to handle objects properly
+  if (data.taxFlags && data.taxFlags.length > 0) {
+    html += '<div class="result-section tax-flags-card"><h4>⚠️ Tax-Related Flags:</h4><ul>';
+    data.taxFlags.forEach(flag => {
+      if (typeof flag === 'object' && flag !== null) {
+        const title = flag.title || flag.name || 'Tax Flag';
+        const message = flag.message || flag.description || flag.details || '';
+        html += `<li><strong>${title}</strong>${message ? ': ' + message : ''}</li>`;
+      } else {
+        html += '<li>' + flag + '</li>';
+      }
+    });
     html += '</ul></div>';
   }
   
-  if (data.actionItems && data.actionItems.length > 0) {
-    html += '<div class="result-section warning-card"><h4>🔍 Mistake Finder:</h4><ul>';
-    data.actionItems.forEach(item => html += '<li>' + item + '</li>');
+  // Mistakes - FIXED to handle objects properly
+  if (data.mistakes && data.mistakes.length > 0) {
+    html += '<div class="result-section mistakes-card"><h4>🔍 Mistake Finder:</h4><ul>';
+    data.mistakes.forEach(mistake => {
+      if (typeof mistake === 'object' && mistake !== null) {
+        const title = mistake.title || mistake.name || 'Mistake';
+        const message = mistake.message || mistake.description || mistake.details || '';
+        html += `<li><strong>${title}</strong>${message ? ': ' + message : ''}</li>`;
+      } else {
+        html += '<li>' + mistake + '</li>';
+      }
+    });
     html += '</ul></div>';
+  }
+  
+  // Savings Suggestions
+  if (data.savingsSuggestions && data.savingsSuggestions.length > 0) {
+    html += '<div class="result-section savings-card"><h4>💡 Recommended Savings Suggestions:</h4><ul>';
+    data.savingsSuggestions.forEach(suggestion => {
+      html += '<li>' + suggestion + '</li>';
+    });
+    html += '</ul></div>';
+  }
+  
+  // SIP Planning Section
+  if (data.sipPlanning && data.sipPlanning.recommendedMonthlySIP > 0) {
+    const sip = data.sipPlanning;
+    html += '<div class="result-section sip-planning-card"><h4>📈 SIP Planning Recommendations:</h4>';
+    html += `<div class="sip-summary"><p class="sip-amount"><strong>Recommended Monthly SIP:</strong> ₹${sip.recommendedMonthlySIP.toLocaleString('en-IN')}</p></div>`;
+    
+    if (sip.expectedReturns) {
+      html += '<div class="sip-returns"><h5>Expected Returns (12% annual return):</h5>';
+      html += '<div class="returns-grid">';
+      
+      if (sip.expectedReturns["3years"]) {
+        const r3 = sip.expectedReturns["3years"];
+        html += `<div class="return-item"><strong>3 Years:</strong><br>Invested: ₹${r3.invested.toLocaleString('en-IN')}<br>Returns: ₹${r3.returns.toLocaleString('en-IN')}<br>Total: ₹${r3.total.toLocaleString('en-IN')}</div>`;
+      }
+      if (sip.expectedReturns["5years"]) {
+        const r5 = sip.expectedReturns["5years"];
+        html += `<div class="return-item"><strong>5 Years:</strong><br>Invested: ₹${r5.invested.toLocaleString('en-IN')}<br>Returns: ₹${r5.returns.toLocaleString('en-IN')}<br>Total: ₹${r5.total.toLocaleString('en-IN')}</div>`;
+      }
+      if (sip.expectedReturns["10years"]) {
+        const r10 = sip.expectedReturns["10years"];
+        html += `<div class="return-item"><strong>10 Years:</strong><br>Invested: ₹${r10.invested.toLocaleString('en-IN')}<br>Returns: ₹${r10.returns.toLocaleString('en-IN')}<br>Total: ₹${r10.total.toLocaleString('en-IN')}</div>`;
+      }
+      html += '</div></div>';
+    }
+    
+    if (sip.investmentCategories && sip.investmentCategories.length > 0) {
+      html += '<div class="sip-categories"><h5>Recommended Investment Categories:</h5><ul>';
+      sip.investmentCategories.forEach(cat => {
+        html += `<li><strong>${cat.category}</strong> (${cat.allocation}) - ₹${cat.amount.toLocaleString('en-IN')}/month<br><em>${cat.description}</em></li>`;
+      });
+      html += '</ul></div>';
+    }
+    
+    html += '</div>';
   }
   
   html += '<details class="result-section"><summary>View Full JSON</summary><pre class="result-json">' + JSON.stringify(data, null, 2) + '</pre></details>';
@@ -191,10 +306,140 @@ function copyResult() {
   }
 }
 </script>
+
+<style>
+/* Salary Slip specific styles */
+.summary-card {
+  background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+  border-left: 4px solid #2196F3;
+}
+
+.salary-data-card {
+  background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+  border-left: 4px solid #4CAF50;
+}
+
+.expenses-data-card {
+  background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
+  border-left: 4px solid #FF9800;
+}
+
+.net-pay-card {
+  background: linear-gradient(135deg, #F3E5F5 0%, #E1BEE7 100%);
+  border-left: 4px solid #9C27B0;
+  text-align: center;
+}
+
+.net-pay-amount {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #9C27B0;
+  margin: 1rem 0;
+}
+
+.tax-flags-card {
+  background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%);
+  border-left: 4px solid #F44336;
+}
+
+.mistakes-card {
+  background: linear-gradient(135deg, #FFF9C4 0%, #FFF59D 100%);
+  border-left: 4px solid #FBC02D;
+}
+
+.savings-card {
+  background: linear-gradient(135deg, #E0F2F1 0%, #B2DFDB 100%);
+  border-left: 4px solid #009688;
+}
+
+.sip-planning-card {
+  background: linear-gradient(135deg, #E8EAF6 0%, #C5CAE9 100%);
+  border-left: 4px solid #3F51B5;
+}
+
+.salary-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.salary-table th,
+.salary-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.salary-table th {
+  background: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+  color: #333;
+}
+
+.salary-table .total-row {
+  background: rgba(255, 255, 255, 0.7);
+  border-top: 2px solid #333;
+}
+
+.sip-summary {
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.sip-amount {
+  font-size: 1.25rem;
+  color: #3F51B5;
+  margin: 0;
+}
+
+.sip-returns {
+  margin: 1.5rem 0;
+}
+
+.sip-returns h5 {
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.returns-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.return-item {
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  line-height: 1.8;
+}
+
+.sip-categories {
+  margin-top: 1.5rem;
+}
+
+.sip-categories h5 {
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.sip-categories ul li {
+  margin: 1rem 0;
+  line-height: 1.8;
+}
+
+@media (max-width: 768px) {
+  .returns-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .net-pay-amount {
+    font-size: 1.5rem;
+  }
+}
+</style>
 {% endblock %}
-
-
-
-
-
-
