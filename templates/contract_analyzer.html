@@ -185,166 +185,210 @@ function displayContractResults(containerId, data) {
     return;
   }
   
-  let html = '<div class="result-card fade-in"><h3 class="result-header">📜 Contract Analysis</h3>';
+  let html = '<div class="result-card fade-in"><h3 class="result-header">📜 International Contract Analysis</h3>';
   
-  // Metadata Section
-  if (data.metadata) {
-    const meta = data.metadata;
-    html += '<div class="result-section metadata-card"><h4>📋 Contract Metadata:</h4>';
+  // Executive Summary
+  if (data.executiveSummary && data.executiveSummary.length > 0) {
+    html += '<div class="result-section summary-card"><h4>📊 Executive Summary:</h4><ul style="list-style: none; padding-left: 0;">';
+    data.executiveSummary.forEach(point => {
+      html += `<li style="margin: 0.75rem 0; padding-left: 1.5rem; position: relative;">`;
+      html += `<span style="position: absolute; left: 0;">•</span> ${point}</li>`;
+    });
+    html += '</ul></div>';
+  }
+  
+  // Parties and Contract Type
+  if (data.partiesAndType) {
+    const pt = data.partiesAndType;
+    html += '<div class="result-section metadata-card"><h4>👥 Parties & Contract Type:</h4>';
     html += '<div class="metadata-grid">';
-    if (meta.parties) {
-      html += `<div class="metadata-item"><strong>Parties:</strong> ${meta.parties.provider || 'N/A'} (Provider) ↔ ${meta.parties.client || 'N/A'} (Client)</div>`;
+    if (pt.parties) {
+      html += `<div class="metadata-item"><strong>Provider/Service Provider:</strong> ${pt.parties.provider || pt.parties.serviceProvider || 'Unknown'}</div>`;
+      html += `<div class="metadata-item"><strong>Client/Customer:</strong> ${pt.parties.client || pt.parties.customer || 'Unknown'}</div>`;
     }
-    if (meta.contractType) {
-      html += `<div class="metadata-item"><strong>Type:</strong> ${meta.contractType}</div>`;
+    if (pt.contractType) {
+      html += `<div class="metadata-item"><strong>Contract Type:</strong> ${pt.contractType}</div>`;
     }
-    if (meta.contractValue) {
-      html += `<div class="metadata-item"><strong>Value:</strong> ${meta.contractValue}</div>`;
+    if (pt.governingLaw) {
+      html += `<div class="metadata-item"><strong>Governing Law:</strong> ${pt.governingLaw} <em>(as stated in contract)</em></div>`;
+    } else {
+      html += `<div class="metadata-item"><strong>Governing Law:</strong> <em>Not specified in contract</em></div>`;
     }
-    if (meta.effectiveDate) {
-      html += `<div class="metadata-item"><strong>Effective Date:</strong> ${meta.effectiveDate}</div>`;
-    }
-    if (meta.expirationDate) {
-      html += `<div class="metadata-item"><strong>Expiration:</strong> ${meta.expirationDate}</div>`;
-    }
-    if (meta.governingLaw) {
-      html += `<div class="metadata-item"><strong>Governing Law:</strong> ${meta.governingLaw}</div>`;
-    }
-    if (meta.disputeResolution) {
-      html += `<div class="metadata-item"><strong>Dispute Resolution:</strong> ${meta.disputeResolution}</div>`;
+    if (pt.jurisdiction) {
+      html += `<div class="metadata-item"><strong>Jurisdiction:</strong> ${pt.jurisdiction} <em>(as stated in contract)</em></div>`;
     }
     html += '</div></div>';
   }
   
-  // Summary Section
-  if (data.summary) {
-    html += '<div class="result-section summary-card"><h4>📝 Summary:</h4><p>' + data.summary + '</p></div>';
+  // Scope and Obligations
+  if (data.scopeAndObligations) {
+    const so = data.scopeAndObligations;
+    html += '<div class="result-section"><h4>📋 Scope of Services / Obligations:</h4>';
+    if (so.scopeOfServices) {
+      html += `<div style="margin-bottom: 1.5rem;"><strong>Scope of Services:</strong><p style="margin-top: 0.5rem; line-height: 1.8;">${so.scopeOfServices}</p></div>`;
+    }
+    if (so.providerObligations && so.providerObligations.length > 0) {
+      html += '<div class="obligations-card provider" style="margin-bottom: 1rem;"><h5>👤 Provider Obligations:</h5><ul>';
+      so.providerObligations.forEach(ob => {
+        const title = ob.title || 'Obligation';
+        const desc = ob.description || '';
+        const deadline = ob.deadline ? ` <em>(Deadline: ${ob.deadline})</em>` : '';
+        html += `<li><strong>${title}</strong>${desc ? ': ' + desc : ''}${deadline}</li>`;
+      });
+      html += '</ul></div>';
+    }
+    if (so.clientObligations && so.clientObligations.length > 0) {
+      html += '<div class="obligations-card client"><h5>👥 Client Obligations:</h5><ul>';
+      so.clientObligations.forEach(ob => {
+        const title = ob.title || 'Obligation';
+        const desc = ob.description || '';
+        const deadline = ob.deadline ? ` <em>(Deadline: ${ob.deadline})</em>` : '';
+        html += `<li><strong>${title}</strong>${desc ? ': ' + desc : ''}${deadline}</li>`;
+      });
+      html += '</ul></div>';
+    }
+    html += '</div>';
   }
   
-  // Provider Obligations
-  if (data.providerObligations && data.providerObligations.length > 0) {
-    html += '<div class="result-section obligations-card provider"><h4>👤 Provider Obligations:</h4><ul>';
-    data.providerObligations.forEach(ob => {
-      const title = typeof ob === 'object' ? (ob.title || 'Obligation') : ob;
-      const desc = typeof ob === 'object' ? (ob.description || '') : '';
-      const deadline = typeof ob === 'object' ? (ob.deadline ? ` <em>(Deadline: ${ob.deadline})</em>` : '') : '';
-      html += `<li><strong>${title}</strong>${desc ? ': ' + desc : ''}${deadline}</li>`;
+  // Commercial Terms
+  if (data.commercialTerms) {
+    const ct = data.commercialTerms;
+    html += '<div class="result-section" style="background: #f0fff4; border-left: 4px solid #28a745;"><h4>💰 Commercial Terms:</h4>';
+    if (ct.pricing) html += `<div style="margin: 0.5rem 0;"><strong>Pricing:</strong> ${ct.pricing}</div>`;
+    if (ct.paymentTerms) html += `<div style="margin: 0.5rem 0;"><strong>Payment Terms:</strong> ${ct.paymentTerms}</div>`;
+    if (ct.currency) html += `<div style="margin: 0.5rem 0;"><strong>Currency:</strong> ${ct.currency}</div>`;
+    if (ct.paymentMethod) html += `<div style="margin: 0.5rem 0;"><strong>Payment Method:</strong> ${ct.paymentMethod}</div>`;
+    html += '</div>';
+  }
+  
+  // Clause-by-Clause Analysis (Table Format)
+  if (data.clauseAnalysis && data.clauseAnalysis.length > 0) {
+    html += '<div class="result-section key-clauses-card"><h4>📑 Clause-by-Clause Analysis:</h4>';
+    html += '<div style="overflow-x: auto;"><table class="clause-analysis-table" style="width: 100%; border-collapse: collapse; margin-top: 1rem;">';
+    html += '<thead><tr style="background: #f5f5f5;">';
+    html += '<th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Clause</th>';
+    html += '<th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Presence</th>';
+    html += '<th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Adequacy</th>';
+    html += '<th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Balance</th>';
+    html += '<th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">Summary & Assessment</th>';
+    html += '</tr></thead><tbody>';
+    
+    data.clauseAnalysis.forEach(clause => {
+      const presence = clause.presence || 'unknown';
+      const adequacy = clause.adequacy || 'unknown';
+      const balance = clause.balance || 'unclear';
+      
+      const presenceColor = presence === 'present' ? '#4caf50' : presence === 'weak' ? '#ff9800' : '#f44336';
+      const adequacyColor = adequacy === 'adequate' ? '#4caf50' : adequacy === 'weak' ? '#ff9800' : '#f44336';
+      
+      html += '<tr>';
+      html += `<td style="padding: 0.75rem; border: 1px solid #ddd; font-weight: 600;">${clause.clauseName || 'Unknown'}</td>`;
+      html += `<td style="padding: 0.75rem; border: 1px solid #ddd;"><span style="color: ${presenceColor}; font-weight: 600;">${presence.toUpperCase()}</span></td>`;
+      html += `<td style="padding: 0.75rem; border: 1px solid #ddd;"><span style="color: ${adequacyColor}; font-weight: 600;">${adequacy.toUpperCase()}</span></td>`;
+      html += `<td style="padding: 0.75rem; border: 1px solid #ddd;">${balance}</td>`;
+      html += `<td style="padding: 0.75rem; border: 1px solid #ddd; line-height: 1.6;">`;
+      if (clause.summary) html += `<strong>Summary:</strong> ${clause.summary}<br>`;
+      if (clause.assessment) html += `<strong>Assessment:</strong> ${clause.assessment}`;
+      html += '</td>';
+      html += '</tr>';
     });
-    html += '</ul></div>';
+    
+    html += '</tbody></table></div></div>';
   }
   
-  // Client Obligations
-  if (data.clientObligations && data.clientObligations.length > 0) {
-    html += '<div class="result-section obligations-card client"><h4>👥 Client Obligations:</h4><ul>';
-    data.clientObligations.forEach(ob => {
-      const title = typeof ob === 'object' ? (ob.title || 'Obligation') : ob;
-      const desc = typeof ob === 'object' ? (ob.description || '') : '';
-      const deadline = typeof ob === 'object' ? (ob.deadline ? ` <em>(Deadline: ${ob.deadline})</em>` : '') : '';
-      html += `<li><strong>${title}</strong>${desc ? ': ' + desc : ''}${deadline}</li>`;
-    });
-    html += '</ul></div>';
-  }
-  
-  // Risks Section - Fixed to handle objects properly
-  if (data.risks && data.risks.length > 0) {
-    html += '<div class="result-section risks-card"><h4>⚠️ Risks & Red Flags:</h4>';
+  // Risk Assessment
+  if (data.riskAssessment && data.riskAssessment.length > 0) {
+    html += '<div class="result-section risks-card"><h4>⚠️ Risk Assessment:</h4>';
     if (data.overallRiskLevel) {
-      const riskColor = data.overallRiskLevel === 'high' ? '#dc3545' : data.overallRiskLevel === 'medium' ? '#ffc107' : '#28a745';
-      html += `<div class="overall-risk"><strong>Overall Risk Level:</strong> <span style="color: ${riskColor}; font-weight: bold;">${data.overallRiskLevel.toUpperCase()}</span></div>`;
+      const riskLevel = data.overallRiskLevel.toUpperCase();
+      const riskColor = riskLevel === 'HIGH' ? '#dc3545' : riskLevel === 'MEDIUM' ? '#ffc107' : '#28a745';
+      html += `<div class="overall-risk"><strong>Overall Risk Level:</strong> <span style="color: ${riskColor}; font-weight: bold; font-size: 1.2rem;">${riskLevel}</span></div>`;
     }
-    html += '<ul>';
-    data.risks.forEach(risk => {
-      if (typeof risk === 'object' && risk !== null) {
-        const title = risk.title || risk.name || 'Risk';
-        const description = risk.description || risk.details || '';
-        const severity = risk.severity || risk.level || '';
-        const category = risk.category || '';
-        const mitigation = risk.mitigation || '';
-        const severityBadge = severity ? `<span class="severity-badge severity-${severity.toLowerCase()}">${severity.toUpperCase()}</span>` : '';
-        const categoryBadge = category ? `<span class="category-badge">${category}</span>` : '';
-        html += `<li><strong>${title}</strong> ${severityBadge} ${categoryBadge}`;
-        if (description) {
-          html += `<br>${description}`;
-        }
-        if (mitigation) {
-          html += `<br><em style="color: #666;">💡 Mitigation: ${mitigation}</em>`;
-        }
-        html += '</li>';
-      } else {
-        html += '<li>' + risk + '</li>';
+    html += '<div style="margin-top: 1rem;">';
+    data.riskAssessment.forEach(risk => {
+      const riskLevel = (risk.riskLevel || 'LOW').toUpperCase();
+      const riskColor = riskLevel === 'HIGH' ? '#dc3545' : riskLevel === 'MEDIUM' ? '#ffc107' : '#28a745';
+      const category = risk.category || 'general';
+      
+      html += '<div style="margin: 1rem 0; padding: 1rem; background: white; border-radius: 8px; border-left: 4px solid ' + riskColor + ';">';
+      html += `<strong style="font-size: 1.1rem;">${risk.title || 'Risk'}</strong> `;
+      html += `<span class="severity-badge" style="background: ${riskColor === '#dc3545' ? '#ffebee' : riskColor === '#ffc107' ? '#fff8e1' : '#e8f5e9'}; color: ${riskColor}; border: 1px solid ${riskColor};">${riskLevel}</span> `;
+      html += `<span class="category-badge">${category}</span>`;
+      if (risk.affectedClause) {
+        html += `<div style="margin-top: 0.5rem; color: #666;"><strong>Affected Clause:</strong> ${risk.affectedClause}</div>`;
       }
-    });
-    html += '</ul></div>';
-  }
-  
-  // Missing Clauses
-  if (data.missingClauses && data.missingClauses.length > 0) {
-    html += '<div class="result-section missing-clauses-card"><h4>❌ Missing Clauses:</h4><ul>';
-    data.missingClauses.forEach(clause => {
-      if (typeof clause === 'object' && clause !== null) {
-        const name = clause.clauseName || clause.name || 'Clause';
-        const importance = clause.importance || '';
-        const description = clause.description || '';
-        const wording = clause.suggestedWording || '';
-        const importanceBadge = importance ? `<span class="importance-badge importance-${importance.toLowerCase()}">${importance}</span>` : '';
-        html += `<li><strong>${name}</strong> ${importanceBadge}`;
-        if (description) {
-          html += `<br>${description}`;
-        }
-        if (wording) {
-          html += `<br><em style="color: #666;">💡 Suggested: "${wording}"</em>`;
-        }
-        html += '</li>';
-      } else {
-        html += '<li>' + clause + '</li>';
+      if (risk.description) {
+        html += `<div style="margin-top: 0.5rem; line-height: 1.6;"><strong>Why this risk exists:</strong> ${risk.description}</div>`;
       }
-    });
-    html += '</ul></div>';
-  }
-  
-  // Key Clauses
-  if (data.keyClauses && Object.keys(data.keyClauses).length > 0) {
-    html += '<div class="result-section key-clauses-card"><h4>🔑 Key Clauses:</h4>';
-    html += '<div class="key-clauses-grid">';
-    const clauseLabels = {
-      payment: '💰 Payment Terms',
-      confidentiality: '🔒 Confidentiality',
-      liability: '⚖️ Liability',
-      termination: '🚪 Termination',
-      ipOwnership: '📄 IP Ownership',
-      disputeResolution: '⚖️ Dispute Resolution',
-      warranties: '✅ Warranties',
-      indemnification: '🛡️ Indemnification'
-    };
-    Object.keys(data.keyClauses).forEach(key => {
-      if (data.keyClauses[key]) {
-        html += `<div class="key-clause-item"><strong>${clauseLabels[key] || key}:</strong> ${data.keyClauses[key]}</div>`;
+      if (risk.impact) {
+        html += `<div style="margin-top: 0.5rem;"><strong>Impact:</strong> ${risk.impact}</div>`;
       }
+      if (risk.recommendation) {
+        html += `<div style="margin-top: 0.5rem; color: #6C5DD3;"><strong>💡 Recommendation:</strong> ${risk.recommendation}</div>`;
+      }
+      html += '</div>';
     });
     html += '</div></div>';
   }
   
-  // Improvements
-  if (data.improvements && data.improvements.length > 0) {
-    html += '<div class="result-section improvements-card"><h4>💡 Suggested Improvements:</h4><ul>';
-    data.improvements.forEach(imp => {
-      if (typeof imp === 'object' && imp !== null) {
-        const title = imp.title || imp.name || 'Improvement';
-        const description = imp.description || '';
-        const priority = imp.priority || '';
-        const wording = imp.suggestedWording || '';
-        const priorityBadge = priority ? `<span class="priority-badge priority-${priority.toLowerCase()}">${priority}</span>` : '';
-        html += `<li><strong>${title}</strong> ${priorityBadge}`;
-        if (description) {
-          html += `<br>${description}`;
-        }
-        if (wording) {
-          html += `<br><em style="color: #666;">💡 Suggested: "${wording}"</em>`;
-        }
-        html += '</li>';
-      } else {
-        html += '<li>' + imp + '</li>';
+  // Global Compliance Review
+  if (data.globalCompliance) {
+    const gc = data.globalCompliance;
+    html += '<div class="result-section" style="background: #e3f2fd; border-left: 4px solid #2196F3;"><h4>🌍 Global Compliance Review:</h4>';
+    
+    if (gc.internationalEnforceability) {
+      html += `<div style="margin: 1rem 0; padding: 1rem; background: white; border-radius: 8px;"><strong>International Enforceability:</strong><p style="margin-top: 0.5rem; line-height: 1.6;">${gc.internationalEnforceability}</p></div>`;
+    }
+    
+    if (gc.dataPrivacyGaps && gc.dataPrivacyGaps.length > 0) {
+      html += '<div style="margin: 1rem 0;"><strong>Data Privacy Gaps:</strong><ul>';
+      gc.dataPrivacyGaps.forEach(gap => html += `<li>${gap}</li>`);
+      html += '</ul></div>';
+    }
+    
+    if (gc.crossBorderIssues && gc.crossBorderIssues.length > 0) {
+      html += '<div style="margin: 1rem 0;"><strong>Cross-Border Issues:</strong><ul>';
+      gc.crossBorderIssues.forEach(issue => html += `<li>${issue}</li>`);
+      html += '</ul></div>';
+    }
+    
+    if (gc.complianceRecommendations && gc.complianceRecommendations.length > 0) {
+      html += '<div style="margin: 1rem 0;"><strong>Compliance Recommendations:</strong><ul>';
+      gc.complianceRecommendations.forEach(rec => html += `<li>${rec}</li>`);
+      html += '</ul></div>';
+    }
+    
+    html += '</div>';
+  }
+  
+  // Optional Improvement Clauses
+  if (data.optionalImprovements && data.optionalImprovements.length > 0) {
+    html += '<div class="result-section improvements-card"><h4>💡 Optional Improvement Clauses:</h4>';
+    html += '<div style="margin-bottom: 1rem; padding: 0.75rem; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">';
+    html += '<strong>⚠️ Note:</strong> These are optional, jurisdiction-agnostic suggestions. They are not requirements and should be reviewed by legal counsel before implementation.';
+    html += '</div>';
+    html += '<ul>';
+    data.optionalImprovements.forEach(imp => {
+      const priority = (imp.priority || 'medium').toLowerCase();
+      const priorityColor = priority === 'high' ? '#dc3545' : priority === 'medium' ? '#ffc107' : '#28a745';
+      html += '<li style="margin: 1rem 0; padding: 1rem; background: white; border-radius: 8px; border-left: 3px solid ' + priorityColor + ';">';
+      html += `<strong>${imp.title || 'Improvement'}</strong> `;
+      html += `<span class="priority-badge priority-${priority}" style="background: ${priorityColor === '#dc3545' ? '#ffebee' : priorityColor === '#ffc107' ? '#fff8e1' : '#e8f5e9'}; color: ${priorityColor}; border: 1px solid ${priorityColor};">${priority.toUpperCase()}</span>`;
+      if (imp.clauseName) {
+        html += `<div style="margin-top: 0.5rem; color: #666;"><strong>Related Clause:</strong> ${imp.clauseName}</div>`;
       }
+      if (imp.description) {
+        html += `<div style="margin-top: 0.5rem; line-height: 1.6;">${imp.description}</div>`;
+      }
+      if (imp.suggestedWording) {
+        html += `<div style="margin-top: 0.75rem; padding: 0.75rem; background: #f8f9fa; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.6;">`;
+        html += `<strong>Suggested Wording:</strong><br>${imp.suggestedWording}`;
+        html += '</div>';
+      }
+      if (imp.note) {
+        html += `<div style="margin-top: 0.5rem; font-style: italic; color: #666;">${imp.note}</div>`;
+      }
+      html += '</li>';
     });
     html += '</ul></div>';
   }
@@ -517,6 +561,19 @@ function copyResult() {
   background: #e8f5e9;
   color: #2e7d32;
   border: 1px solid #2e7d32;
+}
+
+.clause-analysis-table {
+  font-size: 0.9rem;
+}
+
+.clause-analysis-table th {
+  font-weight: 700;
+  background: #f5f5f5;
+}
+
+.clause-analysis-table td {
+  vertical-align: top;
 }
 
 .priority-badge {

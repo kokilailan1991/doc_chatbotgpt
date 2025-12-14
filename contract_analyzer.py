@@ -16,13 +16,13 @@ class ContractAnalyzer:
     
     def __init__(self, openai_api_key: str):
         from langchain_openai import ChatOpenAI
-        # Use faster model with optimized settings
+        # Use faster model with optimized settings for comprehensive analysis
         self.llm = ChatOpenAI(
             model="gpt-4o-mini", 
             temperature=0.1, 
             openai_api_key=openai_api_key,
-            max_tokens=4000,  # Limit response size for faster processing
-            timeout=60  # 60 second timeout
+            max_tokens=6000,  # Increased for comprehensive clause analysis
+            timeout=90  # 90 second timeout for comprehensive analysis
         )
         self.output_parser = StrOutputParser()
     
@@ -45,7 +45,7 @@ class ContractAnalyzer:
         return chain
     
     def analyze_contract(self, retriever) -> Dict[str, Any]:
-        """Comprehensive contract analysis - optimized for speed"""
+        """Comprehensive international contract analysis - globally neutral approach"""
         
         # Get all document content once
         def format_docs(docs):
@@ -56,22 +56,85 @@ class ContractAnalyzer:
             docs = retriever.get_relevant_documents("document") if hasattr(retriever, 'get_relevant_documents') else []
         content = format_docs(docs) if docs else ""
         
-        # Single comprehensive analysis call instead of 7 separate calls
-        comprehensive_template = """Analyze this contract comprehensively and return ALL analysis in a single JSON response.
+        if not content or len(content.strip()) < 50:
+            return {
+                "error": "Could not extract contract content. Please ensure the document is readable.",
+                "executiveSummary": [],
+                "partiesAndType": {},
+                "scopeAndObligations": {},
+                "commercialTerms": {},
+                "clauseAnalysis": [],
+                "riskAssessment": [],
+                "globalCompliance": {},
+                "optionalImprovements": []
+            }
+        
+        # Comprehensive international contract analysis
+        comprehensive_template = """You are a senior international contracts lawyer and enterprise project governance expert.
+
+Analyze this contract WITHOUT assuming any country, governing law, or jurisdiction unless explicitly stated in the document.
 
 Contract Document: {{context}}
 
-Return a JSON object with:
-- summary: comprehensive executive summary (2-3 paragraphs covering parties, purpose, key terms, obligations, risks)
-- metadata: object with parties (provider, client), contractDate, effectiveDate, expirationDate, contractValue, contractType, governingLaw, disputeResolution
-- providerObligations: array of obligations for provider/service provider (each with title, description, deadline)
-- clientObligations: array of obligations for client/customer (each with title, description, deadline)
-- risks: array of risk objects (each with title, description, severity: high/medium/low, category: legal/financial/operational/compliance, mitigation)
-- missingClauses: array of missing clauses (each with clauseName, importance: critical/important/recommended, description, suggestedWording)
-- keyClauses: object with payment, confidentiality, liability, termination, ipOwnership, disputeResolution, warranties, indemnification (brief 2-3 sentence summaries)
-- improvements: array of improvements (each with title, description, priority: high/medium/low, suggestedWording)
+Return a JSON object with the following structure:
 
-Focus on the most important items. Limit risks to top 8, missingClauses to top 6, improvements to top 5.
+1. executiveSummary: array of 5-6 bullet points covering: parties, contract type, scope, key commercial terms, main risks, overall assessment
+
+2. partiesAndType: object with:
+   - parties: object with provider/serviceProvider, client/customer (exact names from document)
+   - contractType: type of contract (e.g., "Service Agreement", "Software License", "Consulting Agreement")
+   - governingLaw: ONLY if explicitly stated in document, otherwise null
+   - jurisdiction: ONLY if explicitly stated, otherwise null
+
+3. scopeAndObligations: object with:
+   - scopeOfServices: detailed description of services/deliverables
+   - providerObligations: array of obligations (each with title, description, deadline if any)
+   - clientObligations: array of obligations (each with title, description, deadline if any)
+
+4. commercialTerms: object with:
+   - pricing: pricing structure and amounts
+   - paymentTerms: payment schedule, milestones, invoicing requirements
+   - currency: currency if specified
+   - paymentMethod: payment method if specified
+
+5. clauseAnalysis: array of clause objects, each with:
+   - clauseName: one of: "Scope & Deliverables", "Payment & Invoicing", "Confidentiality", "Intellectual Property", "Data Protection & Privacy", "Service Levels / Support", "Warranties & Disclaimers", "Indemnification", "Limitation of Liability", "Term & Termination", "Force Majeure", "Change Management", "Dispute Resolution", "Governing Law"
+   - presence: "present", "weak", or "missing"
+   - adequacy: "adequate", "weak", or "missing" (only if present)
+   - balance: "balanced", "favorable to provider", "favorable to client", or "unclear"
+   - summary: 2-3 sentence summary of what the clause says (or why it's missing/weak)
+   - assessment: brief assessment of strengths and weaknesses
+
+6. riskAssessment: array of risk objects, each with:
+   - title: brief risk title
+   - description: detailed explanation of why this risk exists
+   - riskLevel: "LOW", "MEDIUM", or "HIGH"
+   - category: "legal", "financial", "operational", "compliance", or "commercial"
+   - affectedClause: which clause(s) this risk relates to
+   - impact: potential impact if risk materializes
+   - recommendation: suggested mitigation
+
+7. globalCompliance: object with:
+   - dataPrivacyGaps: array of gaps related to data privacy (GDPR, CCPA, etc.)
+   - crossBorderIssues: array of issues related to cross-border delivery/enforcement
+   - internationalEnforceability: assessment of enforceability across jurisdictions
+   - complianceRecommendations: array of recommendations for global compliance
+
+8. optionalImprovements: array of improvement objects, each with:
+   - title: improvement title
+   - clauseName: which clause this relates to
+   - description: why this improvement is recommended
+   - suggestedWording: optional, jurisdiction-agnostic clause wording
+   - priority: "high", "medium", or "low"
+   - note: "OPTIONAL - This is a suggested improvement, not a requirement"
+
+IMPORTANT RULES:
+- Do NOT assume any country or jurisdiction unless explicitly stated
+- Do NOT inject country-specific laws
+- Mark clauses as "weak" if they exist but are brief, NOT "missing"
+- Use internationally accepted commercial contract language
+- Keep all suggestions neutral and globally applicable
+- Do NOT rewrite the contract, only analyze and suggest
 
 Return ONLY valid JSON, no additional text.
 """
@@ -82,8 +145,8 @@ Return ONLY valid JSON, no additional text.
         chain = prompt | self.llm | self.output_parser
         
         try:
-            # Use smaller context window for faster processing
-            result = chain.invoke({"context": content[:6000]})  # Optimized for speed
+            # Use larger context window for comprehensive analysis
+            result = chain.invoke({"context": content[:15000]})  # Increased for comprehensive international analysis
             
             # Parse the comprehensive result
             if result.strip().startswith('{'):
@@ -96,41 +159,52 @@ Return ONLY valid JSON, no additional text.
                     analysis = {}
             
             # Extract all fields with defaults
-            risks = analysis.get("risks", [])
-            
             return {
-                "summary": analysis.get("summary", "Contract analysis completed. Review the detailed sections below."),
-                "metadata": analysis.get("metadata", {
+                "executiveSummary": analysis.get("executiveSummary", []),
+                "partiesAndType": analysis.get("partiesAndType", {
                     "parties": {"provider": "Unknown", "client": "Unknown"},
-                    "contractDate": None,
-                    "effectiveDate": None,
-                    "expirationDate": None,
-                    "contractValue": None,
                     "contractType": "Contract",
                     "governingLaw": None,
-                    "disputeResolution": None
+                    "jurisdiction": None
                 }),
-                "providerObligations": analysis.get("providerObligations", []),
-                "clientObligations": analysis.get("clientObligations", []),
-                "risks": risks,
-                "missingClauses": analysis.get("missingClauses", []),
-                "keyClauses": analysis.get("keyClauses", {}),
-                "improvements": analysis.get("improvements", []),
-                "overallRiskLevel": self._calculate_overall_risk(risks)
+                "scopeAndObligations": analysis.get("scopeAndObligations", {
+                    "scopeOfServices": "",
+                    "providerObligations": [],
+                    "clientObligations": []
+                }),
+                "commercialTerms": analysis.get("commercialTerms", {
+                    "pricing": "",
+                    "paymentTerms": "",
+                    "currency": None,
+                    "paymentMethod": None
+                }),
+                "clauseAnalysis": analysis.get("clauseAnalysis", []),
+                "riskAssessment": analysis.get("riskAssessment", []),
+                "globalCompliance": analysis.get("globalCompliance", {
+                    "dataPrivacyGaps": [],
+                    "crossBorderIssues": [],
+                    "internationalEnforceability": "",
+                    "complianceRecommendations": []
+                }),
+                "optionalImprovements": analysis.get("optionalImprovements", []),
+                "overallRiskLevel": self._calculate_overall_risk(analysis.get("riskAssessment", []))
             }
         except Exception as e:
             print(f"Error in comprehensive contract analysis: {e}")
+            import traceback
+            traceback.print_exc()
             # Fallback to basic analysis
             return {
-                "summary": "Error analyzing contract. Please try again.",
-                "metadata": {"parties": {"provider": "Unknown", "client": "Unknown"}},
-                "providerObligations": [],
-                "clientObligations": [],
-                "risks": [],
-                "missingClauses": [],
-                "keyClauses": {},
-                "improvements": [],
-                "overallRiskLevel": "low"
+                "error": f"Error analyzing contract: {str(e)}. Please try again.",
+                "executiveSummary": [],
+                "partiesAndType": {"parties": {"provider": "Unknown", "client": "Unknown"}},
+                "scopeAndObligations": {"scopeOfServices": "", "providerObligations": [], "clientObligations": []},
+                "commercialTerms": {},
+                "clauseAnalysis": [],
+                "riskAssessment": [],
+                "globalCompliance": {},
+                "optionalImprovements": [],
+                "overallRiskLevel": "LOW"
             }
     
     def _extract_metadata(self, retriever) -> Dict[str, Any]:
@@ -435,15 +509,15 @@ Return ONLY valid JSON array, no additional text.
     def _calculate_overall_risk(self, risks: List[Dict]) -> str:
         """Calculate overall risk level"""
         if not risks:
-            return "low"
+            return "LOW"
         
-        high_count = sum(1 for r in risks if r.get("severity", "").lower() == "high")
-        medium_count = sum(1 for r in risks if r.get("severity", "").lower() == "medium")
+        high_count = sum(1 for r in risks if r.get("riskLevel", "").upper() == "HIGH")
+        medium_count = sum(1 for r in risks if r.get("riskLevel", "").upper() == "MEDIUM")
         
         if high_count >= 2:
-            return "high"
+            return "HIGH"
         elif high_count >= 1 or medium_count >= 3:
-            return "medium"
+            return "MEDIUM"
         else:
-            return "low"
+            return "LOW"
 
