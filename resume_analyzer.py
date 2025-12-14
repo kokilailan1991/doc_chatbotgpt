@@ -10,6 +10,8 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from workflows import WorkflowProcessor
 
+# No external dependencies - self-contained extraction
+
 
 class ResumeAnalyzer:
     def __init__(self, openai_key: str):
@@ -49,16 +51,32 @@ IMPORTANT: Provide specific, detailed feedback. Avoid generic statements like "g
 Return ONLY valid JSON, no additional text.
 """
         
-        def format_docs(docs):
-            return "\n\n".join(doc.page_content for doc in docs)
+        # Use shared extraction function for resume
+        resume_search_queries = [
+            "resume CV curriculum vitae experience education skills",
+            "resume",
+            "CV",
+            "curriculum vitae"
+        ]
+        resume_text, _ = self._extract_resume_content(resume_retriever, resume_search_queries)
         
-        resume_docs = resume_retriever.get_relevant_documents("resume") if hasattr(resume_retriever, 'get_relevant_documents') else []
-        resume_text = "\n\n".join([doc.page_content for doc in resume_docs]) if resume_docs else ""
+        if not resume_text or len(resume_text.strip()) < 20:
+            return {
+                "overallScore": 0,
+                "keywordScore": 0,
+                "formatScore": 0,
+                "skillsScore": 0,
+                "experienceScore": 0,
+                "strengths": [],
+                "weaknesses": ["Could not extract resume content. Please ensure the PDF is readable."],
+                "recommendations": []
+            }
         
+        # Extract JD if provided
         jd_text = ""
         if jd_retriever:
-            jd_docs = jd_retriever.get_relevant_documents("job description") if hasattr(jd_retriever, 'get_relevant_documents') else []
-            jd_text = "\n\n".join([doc.page_content for doc in jd_docs]) if jd_docs else ""
+            jd_search_queries = ["job description", "JD", "requirements", "qualifications"]
+            jd_text, _ = self._extract_resume_content(jd_retriever, jd_search_queries)
         
         prompt = PromptTemplate.from_template(template)
         chain = prompt | self.llm | self.output_parser
@@ -118,14 +136,19 @@ Return the COMPLETE improved resume in a clear, well-formatted structure. Includ
         def format_docs(docs):
             return "\n\n".join(doc.page_content for doc in docs)
         
-        resume_docs = resume_retriever.get_relevant_documents("resume") if hasattr(resume_retriever, 'get_relevant_documents') else []
-        if not resume_docs:
-            resume_docs = resume_retriever.get_relevant_documents("document") if hasattr(resume_retriever, 'get_relevant_documents') else []
+        # Self-contained extraction
+        search_queries = [
+            "resume CV curriculum vitae experience education skills",
+            "resume",
+            "CV",
+            "curriculum vitae"
+        ]
+        resume_text, resume_docs = self._extract_resume_content(resume_retriever, search_queries)
         
-        resume_text = "\n\n".join([doc.page_content for doc in resume_docs]) if resume_docs else ""
+        if not resume_text or len(resume_text.strip()) < 20:
+            return "Error: Could not extract resume content. Please ensure the resume PDF is readable and contains selectable text. If the PDF is image-based/scanned, please convert it to a text-based PDF first."
         
-        if not resume_text or len(resume_text.strip()) < 50:
-            return "Error: Could not extract resume content. Please ensure the resume PDF is readable."
+        print(f"Resume content extracted: {len(resume_text)} characters from {len(resume_docs) if resume_docs else 0} document chunks")
         
         improvements_text = "\n".join(improvements) if improvements else "General improvements: Optimize for ATS, enhance clarity, use action verbs, add quantifiable achievements"
         
@@ -171,13 +194,24 @@ Return a JSON object with:
 Return ONLY valid JSON, no additional text.
 """
         
-        def format_docs(docs):
-            return "\n\n".join(doc.page_content for doc in docs)
+        # Self-contained extraction for resume
+        resume_search_queries = [
+            "resume CV curriculum vitae experience education skills",
+            "resume",
+            "CV"
+        ]
+        resume_text, _ = self._extract_resume_content(resume_retriever, resume_search_queries)
         
-        resume_docs = resume_retriever.get_relevant_documents("resume") if hasattr(resume_retriever, 'get_relevant_documents') else []
-        resume_text = "\n\n".join([doc.page_content for doc in resume_docs]) if resume_docs else ""
-        jd_docs = jd_retriever.get_relevant_documents("job description") if hasattr(jd_retriever, 'get_relevant_documents') else []
-        jd_text = "\n\n".join([doc.page_content for doc in jd_docs]) if jd_docs else ""
+        if not resume_text or len(resume_text.strip()) < 20:
+            return {
+                "skillGaps": [],
+                "skillGapScore": 0,
+                "recommendations": ["Could not extract resume content. Please ensure the PDF is readable."]
+            }
+        
+        # Extract JD
+        jd_search_queries = ["job description", "JD", "requirements", "qualifications"]
+        jd_text, _ = self._extract_resume_content(jd_retriever, jd_search_queries)
         
         prompt = PromptTemplate.from_template(template)
         chain = prompt | self.llm | self.output_parser
@@ -226,11 +260,22 @@ Return a JSON object with:
 Return ONLY valid JSON, no additional text.
 """
         
-        def format_docs(docs):
-            return "\n\n".join(doc.page_content for doc in docs)
+        # Use shared extraction function
+        search_queries = [
+            "resume CV curriculum vitae experience education skills",
+            "resume",
+            "CV"
+        ]
+        resume_text, _ = self._extract_resume_content(resume_retriever, search_queries)
         
-        resume_docs = resume_retriever.get_relevant_documents("resume") if hasattr(resume_retriever, 'get_relevant_documents') else []
-        resume_text = "\n\n".join([doc.page_content for doc in resume_docs]) if resume_docs else ""
+        if not resume_text or len(resume_text.strip()) < 20:
+            return {
+                "grammarErrors": [],
+                "clarityIssues": [],
+                "bulletPointImprovements": [],
+                "overallWritingScore": 0,
+                "recommendations": ["Could not extract resume content. Please ensure the PDF is readable."]
+            }
         
         prompt = PromptTemplate.from_template(template)
         chain = prompt | self.llm | self.output_parser
@@ -271,10 +316,25 @@ Return a JSON object with:
 Return ONLY valid JSON, no additional text.
 """
         
-        resume_docs = resume_retriever.get_relevant_documents("resume") if hasattr(resume_retriever, 'get_relevant_documents') else []
-        resume_text = "\n\n".join([doc.page_content for doc in resume_docs]) if resume_docs else ""
-        jd_docs = jd_retriever.get_relevant_documents("job description") if hasattr(jd_retriever, 'get_relevant_documents') else []
-        jd_text = "\n\n".join([doc.page_content for doc in jd_docs]) if jd_docs else ""
+        # Self-contained extraction for resume
+        resume_search_queries = [
+            "resume CV curriculum vitae experience education skills",
+            "resume",
+            "CV"
+        ]
+        resume_text, _ = self._extract_resume_content(resume_retriever, resume_search_queries)
+        
+        if not resume_text or len(resume_text.strip()) < 20:
+            return {
+                "matchScore": 0,
+                "matchedKeywords": [],
+                "missingKeywords": [],
+                "recommendations": ["Could not extract resume content. Please ensure the PDF is readable."]
+            }
+        
+        # Extract JD
+        jd_search_queries = ["job description", "JD", "requirements", "qualifications"]
+        jd_text, _ = self._extract_resume_content(jd_retriever, jd_search_queries)
         
         prompt = PromptTemplate.from_template(template)
         chain = prompt | self.llm | self.output_parser
@@ -314,12 +374,27 @@ Return a JSON object with:
 Return ONLY valid JSON, no additional text.
 """
         
-        resume_docs = resume_retriever.get_relevant_documents("resume") if hasattr(resume_retriever, 'get_relevant_documents') else []
-        resume_text = "\n\n".join([doc.page_content for doc in resume_docs]) if resume_docs else ""
+        # Use shared extraction function for resume
+        resume_search_queries = [
+            "resume CV curriculum vitae experience education skills",
+            "resume",
+            "CV"
+        ]
+        resume_text, _ = self._extract_resume_content(resume_retriever, resume_search_queries)
+        
+        if not resume_text or len(resume_text.strip()) < 20:
+            return {
+                "currentKeywords": [],
+                "recommendedKeywords": [],
+                "keywordDensity": 0,
+                "optimizationSuggestions": ["Could not extract resume content. Please ensure the PDF is readable."]
+            }
+        
+        # Extract JD if provided
         jd_text = ""
         if jd_retriever:
-            jd_docs = jd_retriever.get_relevant_documents("job description") if hasattr(jd_retriever, 'get_relevant_documents') else []
-            jd_text = "\n\n".join([doc.page_content for doc in jd_docs]) if jd_docs else ""
+            jd_search_queries = ["job description", "JD", "requirements", "qualifications"]
+            jd_text, _ = self._extract_resume_content(jd_retriever, jd_search_queries)
         
         prompt = PromptTemplate.from_template(template)
         chain = prompt | self.llm | self.output_parser

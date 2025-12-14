@@ -10,6 +10,8 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
+# No external dependencies - self-contained extraction
+
 
 class SalarySlipAnalyzer:
     """Professional salary slip analysis system"""
@@ -37,17 +39,88 @@ class SalarySlipAnalyzer:
         )
         return chain
     
-    def analyze_salary_slip(self, retriever) -> Dict[str, Any]:
-        """Comprehensive salary slip analysis - optimized and accurate"""
-        
-        # Get all document content once
+    def _extract_salary_content(self, retriever):
+        """Extract salary slip content with multiple fallback strategies - self-contained"""
         def format_docs(docs):
             return "\n\n".join(doc.page_content for doc in docs)
         
-        docs = retriever.get_relevant_documents("salary slip payroll") if hasattr(retriever, 'get_relevant_documents') else []
-        if not docs:
-            docs = retriever.get_relevant_documents("document") if hasattr(retriever, 'get_relevant_documents') else []
-        content = format_docs(docs) if docs else ""
+        content = ""
+        docs = []
+        
+        # Strategy 1: Search for salary-specific terms
+        if hasattr(retriever, 'get_relevant_documents'):
+            search_queries = [
+                "salary slip payroll earnings deductions net pay",
+                "salary slip",
+                "payroll",
+                "salary earnings deductions"
+            ]
+            for query in search_queries:
+                try:
+                    temp_docs = retriever.get_relevant_documents(query)
+                    if temp_docs:
+                        temp_content = format_docs(temp_docs)
+                        if len(temp_content.strip()) > len(content.strip()):
+                            content = temp_content
+                            docs = temp_docs
+                except:
+                    continue
+        
+        # Strategy 2: Broader search
+        if len(content.strip()) < 200:
+            try:
+                if hasattr(retriever, 'get_relevant_documents'):
+                    temp_docs = retriever.get_relevant_documents("document")
+                    if temp_docs:
+                        temp_content = format_docs(temp_docs)
+                        if len(temp_content.strip()) > len(content.strip()):
+                            content = temp_content
+                            docs = temp_docs
+            except:
+                pass
+        
+        # Strategy 3: Direct vectorstore access
+        if len(content.strip()) < 200:
+            try:
+                vectorstore = None
+                if hasattr(retriever, 'vectorstore'):
+                    vectorstore = retriever.vectorstore
+                elif hasattr(retriever, '_vectorstore'):
+                    vectorstore = retriever._vectorstore
+                
+                if vectorstore:
+                    try:
+                        all_docs = vectorstore.similarity_search("", k=200)
+                        if all_docs:
+                            temp_content = format_docs(all_docs)
+                            if len(temp_content.strip()) > len(content.strip()):
+                                content = temp_content
+                                docs = all_docs
+                    except:
+                        pass
+            except:
+                pass
+        
+        return content, docs
+    
+    def analyze_salary_slip(self, retriever) -> Dict[str, Any]:
+        """Comprehensive salary slip analysis - optimized and accurate"""
+        
+        # Self-contained extraction
+        content, docs = self._extract_salary_content(retriever)
+        
+        if not content or len(content.strip()) < 20:
+            return {
+                "summary": "Error: Could not extract salary slip content. Please ensure the PDF is readable and contains selectable text.",
+                "salaryData": [],
+                "expensesData": [],
+                "taxFlags": [],
+                "mistakes": [{"title": "Extraction Error", "message": "Could not extract content from PDF. The file might be image-based/scanned or corrupted."}],
+                "savingsSuggestions": [],
+                "sipPlanning": {}
+            }
+        
+        print(f"Salary slip content extracted: {len(content)} characters from {len(docs) if docs else 0} document chunks")
         
         # Single comprehensive extraction with calculation verification
         comprehensive_template = """Extract ALL data from this salary slip accurately and verify calculations.

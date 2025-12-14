@@ -10,6 +10,8 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
+# No external dependencies - self-contained extraction
+
 
 class ContractAnalyzer:
     """Professional contract analysis system"""
@@ -44,21 +46,90 @@ class ContractAnalyzer:
         )
         return chain
     
-    def analyze_contract(self, retriever) -> Dict[str, Any]:
-        """Comprehensive international contract analysis - globally neutral approach"""
-        
-        # Get all document content once
+    def _extract_contract_content(self, retriever):
+        """Extract contract content with multiple fallback strategies - self-contained"""
         def format_docs(docs):
             return "\n\n".join(doc.page_content for doc in docs)
         
-        docs = retriever.get_relevant_documents("contract") if hasattr(retriever, 'get_relevant_documents') else []
-        if not docs:
-            docs = retriever.get_relevant_documents("document") if hasattr(retriever, 'get_relevant_documents') else []
-        content = format_docs(docs) if docs else ""
+        content = ""
+        docs = []
         
-        if not content or len(content.strip()) < 50:
+        # Strategy 1: Search for contract-specific terms
+        if hasattr(retriever, 'get_relevant_documents'):
+            search_queries = [
+                "contract agreement parties obligations terms conditions",
+                "contract",
+                "agreement",
+                "parties obligations"
+            ]
+            for query in search_queries:
+                try:
+                    temp_docs = retriever.get_relevant_documents(query)
+                    if temp_docs:
+                        temp_content = format_docs(temp_docs)
+                        if len(temp_content.strip()) > len(content.strip()):
+                            content = temp_content
+                            docs = temp_docs
+                except:
+                    continue
+        
+        # Strategy 2: Broader search
+        if len(content.strip()) < 200:
+            broad_queries = ["document", "text", "content", ""]
+            for query in broad_queries:
+                try:
+                    if hasattr(retriever, 'get_relevant_documents'):
+                        temp_docs = retriever.get_relevant_documents(query)
+                        if temp_docs:
+                            temp_content = format_docs(temp_docs)
+                            if len(temp_content.strip()) > len(content.strip()):
+                                content = temp_content
+                                docs = temp_docs
+                except:
+                    continue
+        
+        # Strategy 3: Direct vectorstore access
+        if len(content.strip()) < 200:
+            try:
+                vectorstore = None
+                if hasattr(retriever, 'vectorstore'):
+                    vectorstore = retriever.vectorstore
+                elif hasattr(retriever, '_vectorstore'):
+                    vectorstore = retriever._vectorstore
+                
+                if vectorstore:
+                    try:
+                        all_docs = vectorstore.similarity_search("", k=200)
+                        if all_docs:
+                            temp_content = format_docs(all_docs)
+                            if len(temp_content.strip()) > len(content.strip()):
+                                content = temp_content
+                                docs = all_docs
+                    except:
+                        pass
+            except:
+                pass
+        
+        return content, docs
+    
+    def analyze_contract(self, retriever) -> Dict[str, Any]:
+        """Comprehensive international contract analysis - globally neutral approach"""
+        
+        # Self-contained extraction
+        content, docs = self._extract_contract_content(retriever)
+        
+        # Final check - be more lenient
+        if not content or len(content.strip()) < 20:
+            error_msg = "Could not extract sufficient content from the contract PDF. "
+            error_msg += "Possible reasons: "
+            error_msg += "1) The PDF might be image-based/scanned (requires OCR), "
+            error_msg += "2) The PDF might be corrupted, "
+            error_msg += "3) The PDF might not contain selectable text. "
+            error_msg += "Please ensure the PDF contains selectable text or try converting it to a text-based PDF."
+            print(f"ERROR: Contract extraction failed. Content length: {len(content) if content else 0} characters")
+            print(f"Number of docs retrieved: {len(docs) if docs else 0}")
             return {
-                "error": "Could not extract contract content. Please ensure the document is readable.",
+                "error": error_msg,
                 "executiveSummary": [],
                 "partiesAndType": {},
                 "scopeAndObligations": {},
@@ -68,6 +139,8 @@ class ContractAnalyzer:
                 "globalCompliance": {},
                 "optionalImprovements": []
             }
+        
+        print(f"Contract content extracted: {len(content)} characters from {len(docs) if docs else 0} document chunks")
         
         # Comprehensive international contract analysis
         comprehensive_template = """You are a senior international contracts lawyer and enterprise project governance expert.

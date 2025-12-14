@@ -11,12 +11,80 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from workflows import WorkflowProcessor
 
+# No external dependencies - self-contained extraction
+
 
 class BusinessDocsAnalyzer:
     def __init__(self, openai_key: str):
         self.llm = ChatOpenAI(temperature=0, openai_api_key=openai_key)
         self.output_parser = StrOutputParser()
         self.workflow = WorkflowProcessor(openai_key)
+    
+    def _extract_invoice_content(self, retriever):
+        """Extract invoice content with multiple fallback strategies - self-contained"""
+        def format_docs(docs):
+            return "\n\n".join(doc.page_content for doc in docs)
+        
+        content = ""
+        docs = []
+        
+        # Strategy 1: Search for invoice-specific terms
+        if hasattr(retriever, 'get_relevant_documents'):
+            search_queries = [
+                "invoice bill invoice number vendor buyer amount total payment",
+                "invoice",
+                "bill",
+                "vendor buyer amount"
+            ]
+            for query in search_queries:
+                try:
+                    temp_docs = retriever.get_relevant_documents(query)
+                    if temp_docs:
+                        temp_content = format_docs(temp_docs)
+                        if len(temp_content.strip()) > len(content.strip()):
+                            content = temp_content
+                            docs = temp_docs
+                except:
+                    continue
+        
+        # Strategy 2: Broader search
+        if len(content.strip()) < 200:
+            broad_queries = ["document", "text", "content", ""]
+            for query in broad_queries:
+                try:
+                    if hasattr(retriever, 'get_relevant_documents'):
+                        temp_docs = retriever.get_relevant_documents(query)
+                        if temp_docs:
+                            temp_content = format_docs(temp_docs)
+                            if len(temp_content.strip()) > len(content.strip()):
+                                content = temp_content
+                                docs = temp_docs
+                except:
+                    continue
+        
+        # Strategy 3: Direct vectorstore access
+        if len(content.strip()) < 200:
+            try:
+                vectorstore = None
+                if hasattr(retriever, 'vectorstore'):
+                    vectorstore = retriever.vectorstore
+                elif hasattr(retriever, '_vectorstore'):
+                    vectorstore = retriever._vectorstore
+                
+                if vectorstore:
+                    try:
+                        all_docs = vectorstore.similarity_search("", k=200)
+                        if all_docs:
+                            temp_content = format_docs(all_docs)
+                            if len(temp_content.strip()) > len(content.strip()):
+                                content = temp_content
+                                docs = all_docs
+                    except:
+                        pass
+            except:
+                pass
+        
+        return content, docs
     
     def detect_document_type(self, retriever) -> str:
         """Detect the type of business document"""
@@ -136,126 +204,29 @@ Return ONLY valid JSON array, no additional text.
         def format_docs(docs):
             return "\n\n".join(doc.page_content for doc in docs)
         
-        # Try multiple strategies to get document content
-        content = ""
-        docs = []
-        
-        # Strategy 1: Search for invoice-specific terms with more results
-        if hasattr(retriever, 'get_relevant_documents'):
-            try:
-                # Try to get more documents by searching with invoice terms
-                search_queries = [
-                    "invoice bill invoice number vendor buyer amount total payment",
-                    "invoice",
-                    "bill",
-                    "vendor buyer amount"
-                ]
-                for query in search_queries:
-                    try:
-                        # Try to get more documents - check if retriever supports k parameter
-                        if hasattr(retriever, 'search_kwargs') and 'k' in retriever.search_kwargs:
-                            docs = retriever.get_relevant_documents(query)
-                        else:
-                            # Try with explicit k if supported
-                            try:
-                                docs = retriever.get_relevant_documents(query, k=30)
-                            except:
-                                docs = retriever.get_relevant_documents(query)
-                        
-                        if docs:
-                            temp_content = format_docs(docs)
-                            if len(temp_content.strip()) > len(content.strip()):
-                                content = temp_content
-                    except Exception as e:
-                        print(f"Error in query '{query}': {e}")
-                        continue
-            except Exception as e:
-                print(f"Error in invoice search: {e}")
-        
-        # Strategy 2: If still not enough content, try to get more documents
-        if len(content.strip()) < 200:
-            if hasattr(retriever, 'get_relevant_documents'):
-                try:
-                    # Try broader searches
-                    broad_queries = ["document", "text", "content", ""]
-                    for query in broad_queries:
-                        try:
-                            docs = retriever.get_relevant_documents(query)
-                            if docs:
-                                temp_content = format_docs(docs)
-                                if len(temp_content.strip()) > len(content.strip()):
-                                    content = temp_content
-                        except:
-                            continue
-                except Exception as e:
-                    print(f"Error in broad search: {e}")
-        
-        # Strategy 3: Try to access vectorstore directly to get all documents
-        if len(content.strip()) < 200:
-            try:
-                # Check if retriever has vectorstore attribute
-                vectorstore = None
-                if hasattr(retriever, 'vectorstore'):
-                    vectorstore = retriever.vectorstore
-                elif hasattr(retriever, '_vectorstore'):
-                    vectorstore = retriever._vectorstore
-                elif hasattr(retriever, 'vector_store'):
-                    vectorstore = retriever.vector_store
-                
-                if vectorstore:
-                    # Try to get all documents using similarity_search with empty query
-                    try:
-                        all_docs = vectorstore.similarity_search("", k=200)  # Get many documents
-                        if all_docs:
-                            temp_content = format_docs(all_docs)
-                            if len(temp_content.strip()) > len(content.strip()):
-                                content = temp_content
-                    except:
-                        pass
-                    
-                    # Try accessing docstore if available
-                    try:
-                        if hasattr(vectorstore, 'docstore') and hasattr(vectorstore.docstore, '_dict'):
-                            all_docs = list(vectorstore.docstore._dict.values())
-                            if all_docs:
-                                temp_content = format_docs(all_docs)
-                                if len(temp_content.strip()) > len(content.strip()):
-                                    content = temp_content
-                    except:
-                        pass
-            except Exception as e:
-                print(f"Error accessing vectorstore: {e}")
+        # Self-contained extraction
+        content, docs = self._extract_invoice_content(retriever)
         
         # Final check - be more lenient with minimum content
         if not content or len(content.strip()) < 20:
-            # Try one more time with empty query to get all documents
-            if hasattr(retriever, 'get_relevant_documents'):
-                try:
-                    all_docs = retriever.get_relevant_documents("")
-                    if all_docs:
-                        content = format_docs(all_docs)
-                except:
-                    pass
-            
-            if not content or len(content.strip()) < 20:
-                error_msg = "Could not extract sufficient content from the invoice PDF. "
-                error_msg += "Possible reasons: "
-                error_msg += "1) The PDF might be image-based/scanned (requires OCR), "
-                error_msg += "2) The PDF might be corrupted, "
-                error_msg += "3) The PDF might not contain selectable text. "
-                error_msg += "Please ensure the PDF contains selectable text or try converting it to a text-based PDF."
-                print(f"ERROR: Invoice extraction failed. Content length: {len(content) if content else 0} characters")
-                print(f"Number of docs retrieved: {len(docs) if docs else 0}")
-                return {
-                    "documentType": "Invoice",
-                    "error": error_msg,
-                    "summary": "",
-                    "financialDetails": {},
-                    "lineItemsAnalysis": {},
-                    "paymentAnalysis": {},
-                    "riskAnalysis": {},
-                    "tables": []
-                }
+            error_msg = "Could not extract sufficient content from the invoice PDF. "
+            error_msg += "Possible reasons: "
+            error_msg += "1) The PDF might be image-based/scanned (requires OCR), "
+            error_msg += "2) The PDF might be corrupted, "
+            error_msg += "3) The PDF might not contain selectable text. "
+            error_msg += "Please ensure the PDF contains selectable text or try converting it to a text-based PDF."
+            print(f"ERROR: Invoice extraction failed. Content length: {len(content) if content else 0} characters")
+            print(f"Number of docs retrieved: {len(docs) if docs else 0}")
+            return {
+                "documentType": "Invoice",
+                "error": error_msg,
+                "summary": "",
+                "financialDetails": {},
+                "lineItemsAnalysis": {},
+                "paymentAnalysis": {},
+                "riskAnalysis": {},
+                "tables": []
+            }
         
         # Log content length for debugging
         print(f"Invoice content extracted: {len(content)} characters from {len(docs) if docs else 0} document chunks")
@@ -302,11 +273,31 @@ Return ONLY valid JSON, no additional text.
         
         # Replace double braces with single for context variable
         formatted_template = comprehensive_template.replace("{{context}}", "{context}")
-        prompt = PromptTemplate.from_template(formatted_template)
+        
+        try:
+            prompt = PromptTemplate.from_template(formatted_template)
+        except Exception as e:
+            print(f"ERROR: Failed to create prompt template: {e}")
+            return {
+                "documentType": "Invoice",
+                "error": f"Template processing error: {str(e)}",
+                "summary": "",
+                "financialDetails": {},
+                "lineItemsAnalysis": {},
+                "paymentAnalysis": {},
+                "riskAnalysis": {},
+                "tables": []
+            }
+        
         chain = prompt | self.llm | self.output_parser
         
         try:
-            comprehensive_data = chain.invoke({"context": content[:10000]})
+            # Ensure content is a string and not empty
+            content_str = str(content) if content else ""
+            if not content_str.strip():
+                raise ValueError("Content is empty")
+            
+            comprehensive_data = chain.invoke({"context": content_str[:10000]})
             
             # Parse comprehensive result
             if comprehensive_data.strip().startswith('{'):
@@ -442,9 +433,14 @@ Return ONLY valid JSON, no additional text.
             line_items_count=line_items_info.get("lineItemsSummary", {}).get("totalItems", 0)
         )
         
-        prompt = PromptTemplate.from_template(formatted_risk_template)
-        chain = prompt | self.llm | self.output_parser
-        risk_data = chain.invoke({"context": content[:8000]})
+        try:
+            prompt = PromptTemplate.from_template(formatted_risk_template)
+            chain = prompt | self.llm | self.output_parser
+            content_str = str(content) if content else ""
+            risk_data = chain.invoke({"context": content_str[:8000]})
+        except Exception as e:
+            print(f"ERROR in risk analysis: {e}")
+            risk_data = "{}"
         
         risk_info = {"risks": [], "complianceIssues": [], "missingInformation": [], "duplicateCharges": [], "suspiciousPatterns": []}
         try:
