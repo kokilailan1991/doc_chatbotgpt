@@ -2291,14 +2291,15 @@ button:hover {
 
 /* Premium Hero Section */
 .hero-premium {
-  width: 100%;
-  min-height: 90vh;
-  background: linear-gradient(135deg, #EEF0FF 0%, #F8F4FF 50%, #EAF2FF 100%);
-  display: flex;
-  align-items: center;
-  padding: 6rem 2rem;
-  position: relative;
-  overflow: hidden;
+  width: 100% !important;
+  min-height: 90vh !important;
+  background: linear-gradient(135deg, #EEF0FF 0%, #F8F4FF 50%, #EAF2FF 100%) !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 6rem 2rem !important;
+  position: relative !important;
+  overflow: hidden !important;
+  margin: 0 !important;
 }
 
 .hero-premium::before {
@@ -2314,15 +2315,15 @@ button:hover {
 }
 
 .hero-container-premium {
-  max-width: 1280px;
-  margin: 0 auto;
-  width: 100%;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-  align-items: center;
-  position: relative;
-  z-index: 1;
+  max-width: 1280px !important;
+  margin: 0 auto !important;
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 4rem !important;
+  align-items: center !important;
+  position: relative !important;
+  z-index: 1 !important;
 }
 
 .hero-content {
