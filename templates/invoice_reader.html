@@ -52,13 +52,22 @@ document.getElementById("invoiceUploadForm").addEventListener("submit", async (e
   
   try {
     const res = await fetch("/upload", { method: "POST", body: formData });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      document.getElementById("invoiceStatus").innerHTML = '<div class="error-message">❌ ' + (errorData.error || `Server error: ${res.status}`) + '</div>';
+      return;
+    }
+    
     const data = await res.json();
     
-    if (data.message) {
+    if (data.error) {
+      document.getElementById("invoiceStatus").innerHTML = '<div class="error-message">❌ ' + data.error + '</div>';
+    } else if (data.message) {
       document.getElementById("invoiceStatus").innerHTML = '<div class="success-message">✅ ' + data.message + '</div>';
       document.getElementById("invoiceActions").style.display = "flex";
     } else {
-      document.getElementById("invoiceStatus").innerHTML = '<div class="error-message">❌ ' + data.error + '</div>';
+      document.getElementById("invoiceStatus").innerHTML = '<div class="error-message">❌ Unexpected response format</div>';
     }
   } catch (error) {
     document.getElementById("invoiceStatus").innerHTML = '<div class="error-message">❌ Error: ' + error.message + '</div>';
@@ -73,7 +82,19 @@ async function extractInvoice() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({})
     });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      throw new Error(errorData.error || `Server error: ${res.status}`);
+    }
+    
     const data = await res.json();
+    
+    if (data.error) {
+      document.getElementById("invoiceResults").innerHTML = '<div class="error-message">❌ ' + data.error + '</div>';
+      return;
+    }
+    
     invoiceData = data;
     displayInvoiceResults("invoiceResults", data);
     document.getElementById("invoiceResults").scrollIntoView({ behavior: 'smooth' });
@@ -106,6 +127,13 @@ async function trySampleInvoice() {
 
 function displayInvoiceResults(containerId, data) {
   const container = document.getElementById(containerId);
+  
+  // Check for errors first
+  if (data.error) {
+    container.innerHTML = '<div class="error-message">❌ ' + data.error + '</div>';
+    return;
+  }
+  
   let html = '<div class="result-card fade-in"><h3 class="result-header">📊 Invoice Analysis</h3>';
   
   if (data.summary) {
@@ -219,4 +247,9 @@ function copyResult() {
 }
 </style>
 {% endblock %}
+
+
+
+
+
 

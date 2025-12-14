@@ -52,13 +52,22 @@ document.getElementById("pdfUploadForm").addEventListener("submit", async (e) =>
   
   try {
     const res = await fetch("/upload", { method: "POST", body: formData });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      document.getElementById("pdfStatus").innerHTML = '<div class="error-message">❌ ' + (errorData.error || `Server error: ${res.status}`) + '</div>';
+      return;
+    }
+    
     const data = await res.json();
     
-    if (data.message) {
+    if (data.error) {
+      document.getElementById("pdfStatus").innerHTML = '<div class="error-message">❌ ' + data.error + '</div>';
+    } else if (data.message) {
       document.getElementById("pdfStatus").innerHTML = '<div class="success-message">✅ ' + data.message + '</div>';
       document.getElementById("pdfActions").style.display = "flex";
     } else {
-      document.getElementById("pdfStatus").innerHTML = '<div class="error-message">❌ ' + data.error + '</div>';
+      document.getElementById("pdfStatus").innerHTML = '<div class="error-message">❌ Unexpected response format</div>';
     }
   } catch (error) {
     document.getElementById("pdfStatus").innerHTML = '<div class="error-message">❌ Error: ' + error.message + '</div>';
@@ -73,7 +82,19 @@ async function getSummary() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type: "executive" })
     });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      throw new Error(errorData.error || `Server error: ${res.status}`);
+    }
+    
     const data = await res.json();
+    
+    if (data.error) {
+      document.getElementById("pdfResults").innerHTML = '<div class="error-message">❌ ' + data.error + '</div>';
+      return;
+    }
+    
     displayPDFResults("pdfResults", data, "summary");
     document.getElementById("pdfResults").scrollIntoView({ behavior: 'smooth' });
   } catch (error) {
@@ -89,7 +110,19 @@ async function getInsights() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ document_type: "general" })
     });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      throw new Error(errorData.error || `Server error: ${res.status}`);
+    }
+    
     const data = await res.json();
+    
+    if (data.error) {
+      document.getElementById("pdfResults").innerHTML = '<div class="error-message">❌ ' + data.error + '</div>';
+      return;
+    }
+    
     displayPDFResults("pdfResults", data, "insights");
     document.getElementById("pdfResults").scrollIntoView({ behavior: 'smooth' });
   } catch (error) {
@@ -105,7 +138,19 @@ async function getRisks() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({})
     });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      throw new Error(errorData.error || `Server error: ${res.status}`);
+    }
+    
     const data = await res.json();
+    
+    if (data.error) {
+      document.getElementById("pdfResults").innerHTML = '<div class="error-message">❌ ' + data.error + '</div>';
+      return;
+    }
+    
     displayPDFResults("pdfResults", data, "risks");
     document.getElementById("pdfResults").scrollIntoView({ behavior: 'smooth' });
   } catch (error) {
@@ -121,7 +166,19 @@ async function getActionItems() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({})
     });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      throw new Error(errorData.error || `Server error: ${res.status}`);
+    }
+    
     const data = await res.json();
+    
+    if (data.error) {
+      document.getElementById("pdfResults").innerHTML = '<div class="error-message">❌ ' + data.error + '</div>';
+      return;
+    }
+    
     displayPDFResults("pdfResults", data, "actions");
     document.getElementById("pdfResults").scrollIntoView({ behavior: 'smooth' });
   } catch (error) {
@@ -156,6 +213,13 @@ async function trySamplePDF() {
 
 function displayPDFResults(containerId, data, type) {
   const container = document.getElementById(containerId);
+  
+  // Check for errors first
+  if (data.error) {
+    container.innerHTML = '<div class="error-message">❌ ' + data.error + '</div>';
+    return;
+  }
+  
   let html = '<div class="result-card fade-in"><h3 class="result-header">📄 PDF Analysis Results</h3>';
   
   if (type === "summary" || type === "full") {
@@ -240,4 +304,9 @@ function copyResult() {
 }
 </style>
 {% endblock %}
+
+
+
+
+
 

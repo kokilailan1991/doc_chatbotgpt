@@ -160,6 +160,13 @@ async function tryDemo() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url })
     });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      document.getElementById("demoResults").innerHTML = `<div class="error-message">❌ ${errorData.error || `Server error: ${res.status}`}</div>`;
+      return;
+    }
+    
     const data = await res.json();
     
     if (data.error) {
@@ -190,6 +197,12 @@ document.getElementById("urlForm").addEventListener("submit", async (e) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url })
     });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      document.getElementById("status").innerText = `❌ ${errorData.error || `Server error: ${res.status}`}`;
+      return;
+    }
     
     const data = await res.json();
     

@@ -49,13 +49,22 @@ document.getElementById("salaryUploadForm").addEventListener("submit", async (e)
   
   try {
     const res = await fetch("/upload", { method: "POST", body: formData });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      document.getElementById("salaryStatus").innerHTML = '<div class="error-message">❌ ' + (errorData.error || `Server error: ${res.status}`) + '</div>';
+      return;
+    }
+    
     const data = await res.json();
     
-    if (data.message) {
+    if (data.error) {
+      document.getElementById("salaryStatus").innerHTML = '<div class="error-message">❌ ' + data.error + '</div>';
+    } else if (data.message) {
       document.getElementById("salaryStatus").innerHTML = '<div class="success-message">✅ ' + data.message + '</div>';
       document.getElementById("salaryActions").style.display = "flex";
     } else {
-      document.getElementById("salaryStatus").innerHTML = '<div class="error-message">❌ ' + data.error + '</div>';
+      document.getElementById("salaryStatus").innerHTML = '<div class="error-message">❌ Unexpected response format</div>';
     }
   } catch (error) {
     document.getElementById("salaryStatus").innerHTML = '<div class="error-message">❌ Error: ' + error.message + '</div>';
@@ -70,7 +79,19 @@ async function analyzeSalary() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({})
     });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      throw new Error(errorData.error || `Server error: ${res.status}`);
+    }
+    
     const data = await res.json();
+    
+    if (data.error) {
+      document.getElementById("salaryResults").innerHTML = '<div class="error-message">❌ ' + data.error + '</div>';
+      return;
+    }
+    
     displaySalaryResults("salaryResults", data);
     document.getElementById("salaryResults").scrollIntoView({ behavior: 'smooth' });
   } catch (error) {
@@ -103,6 +124,13 @@ async function trySampleSalarySlip() {
 
 function displaySalaryResults(containerId, data) {
   const container = document.getElementById(containerId);
+  
+  // Check for errors first
+  if (data.error) {
+    container.innerHTML = '<div class="error-message">❌ ' + data.error + '</div>';
+    return;
+  }
+  
   let html = '<div class="result-card fade-in"><h3 class="result-header">💰 Salary Slip Analysis</h3>';
   
   if (data.summary) {
@@ -164,4 +192,9 @@ function copyResult() {
 }
 </script>
 {% endblock %}
+
+
+
+
+
 

@@ -49,13 +49,22 @@ document.getElementById("contractUploadForm").addEventListener("submit", async (
   
   try {
     const res = await fetch("/upload", { method: "POST", body: formData });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      document.getElementById("contractStatus").innerHTML = '<div class="error-message">❌ ' + (errorData.error || `Server error: ${res.status}`) + '</div>';
+      return;
+    }
+    
     const data = await res.json();
     
-    if (data.message) {
+    if (data.error) {
+      document.getElementById("contractStatus").innerHTML = '<div class="error-message">❌ ' + data.error + '</div>';
+    } else if (data.message) {
       document.getElementById("contractStatus").innerHTML = '<div class="success-message">✅ ' + data.message + '</div>';
       document.getElementById("contractActions").style.display = "flex";
     } else {
-      document.getElementById("contractStatus").innerHTML = '<div class="error-message">❌ ' + data.error + '</div>';
+      document.getElementById("contractStatus").innerHTML = '<div class="error-message">❌ Unexpected response format</div>';
     }
   } catch (error) {
     document.getElementById("contractStatus").innerHTML = '<div class="error-message">❌ Error: ' + error.message + '</div>';
@@ -70,21 +79,54 @@ async function analyzeContract() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ document_type: "contract" })
     });
+    
+    if (!insightsRes.ok) {
+      const errorData = await insightsRes.json().catch(() => ({ error: `HTTP ${insightsRes.status}: ${insightsRes.statusText}` }));
+      throw new Error(errorData.error || `Server error: ${insightsRes.status}`);
+    }
+    
     const insights = await insightsRes.json();
+    
+    if (insights.error) {
+      document.getElementById("contractResults").innerHTML = '<div class="error-message">❌ ' + insights.error + '</div>';
+      return;
+    }
     
     const risksRes = await fetch("/api/workflow/risk-analysis", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({})
     });
+    
+    if (!risksRes.ok) {
+      const errorData = await risksRes.json().catch(() => ({ error: `HTTP ${risksRes.status}: ${risksRes.statusText}` }));
+      throw new Error(errorData.error || `Server error: ${risksRes.status}`);
+    }
+    
     const risks = await risksRes.json();
+    
+    if (risks.error) {
+      document.getElementById("contractResults").innerHTML = '<div class="error-message">❌ ' + risks.error + '</div>';
+      return;
+    }
     
     const summaryRes = await fetch("/api/workflow/summary", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type: "executive" })
     });
+    
+    if (!summaryRes.ok) {
+      const errorData = await summaryRes.json().catch(() => ({ error: `HTTP ${summaryRes.status}: ${summaryRes.statusText}` }));
+      throw new Error(errorData.error || `Server error: ${summaryRes.status}`);
+    }
+    
     const summary = await summaryRes.json();
+    
+    if (summary.error) {
+      document.getElementById("contractResults").innerHTML = '<div class="error-message">❌ ' + summary.error + '</div>';
+      return;
+    }
     
     const data = {
       summary: summary.summary || "",
@@ -134,6 +176,13 @@ async function trySampleContract() {
 
 function displayContractResults(containerId, data) {
   const container = document.getElementById(containerId);
+  
+  // Check for errors first
+  if (data.error) {
+    container.innerHTML = '<div class="error-message">❌ ' + data.error + '</div>';
+    return;
+  }
+  
   let html = '<div class="result-card fade-in"><h3 class="result-header">📜 Contract Analysis</h3>';
   
   html += '<div class="result-section"><h4>📝 Summary:</h4><p>' + (data.summary || "No summary available") + '</p></div>';
@@ -187,4 +236,9 @@ function copyResult() {
 }
 </script>
 {% endblock %}
+
+
+
+
+
 

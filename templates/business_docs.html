@@ -183,67 +183,169 @@ document.getElementById("uploadForm").addEventListener("submit", async (e) => {
   const formData = new FormData();
   formData.append("file", document.getElementById("docFile").files[0]);
   
-  const res = await fetch("/upload", { method: "POST", body: formData });
-  const data = await res.json();
-  document.getElementById("status").innerText = data.message || data.error;
-  
-  if (data.message) {
-    document.getElementById("actions").style.display = "block";
-    const analysisRes = await fetch("/api/business-docs/analyze", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({})
-    });
-    const analysisData = await analysisRes.json();
-    displayResults(analysisData);
+  try {
+    const res = await fetch("/upload", { method: "POST", body: formData });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      document.getElementById("status").innerText = "❌ " + (errorData.error || `Server error: ${res.status}`);
+      return;
+    }
+    
+    const data = await res.json();
+    
+    if (data.error) {
+      document.getElementById("status").innerText = "❌ " + data.error;
+    } else if (data.message) {
+      document.getElementById("status").innerText = "✅ " + data.message;
+      document.getElementById("actions").style.display = "block";
+      
+      const analysisRes = await fetch("/api/business-docs/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({})
+      });
+      
+      if (!analysisRes.ok) {
+        const errorData = await analysisRes.json().catch(() => ({ error: `HTTP ${analysisRes.status}: ${analysisRes.statusText}` }));
+        document.getElementById("status").innerText += "\n❌ Analysis error: " + (errorData.error || `Server error: ${analysisRes.status}`);
+        return;
+      }
+      
+      const analysisData = await analysisRes.json();
+      
+      if (analysisData.error) {
+        document.getElementById("status").innerText += "\n❌ " + analysisData.error;
+      } else {
+        displayResults(analysisData);
+      }
+    } else {
+      document.getElementById("status").innerText = "❌ Unexpected response format";
+    }
+  } catch (error) {
+    document.getElementById("status").innerText = "❌ Error: " + error.message;
   }
 });
 
 async function extractInsights() {
-  const res = await fetch("/api/workflow/extract-insights", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ document_type: "business" })
-  });
-  const data = await res.json();
-  displayResults(data);
+  try {
+    const res = await fetch("/api/workflow/extract-insights", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ document_type: "business" })
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      displayResults({ error: errorData.error || `Server error: ${res.status}` });
+      return;
+    }
+    
+    const data = await res.json();
+    
+    if (data.error) {
+      displayResults({ error: data.error });
+    } else {
+      displayResults(data);
+    }
+  } catch (error) {
+    displayResults({ error: error.message });
+  }
 }
 
 async function getActionItems() {
-  const res = await fetch("/api/workflow/action-items", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({})
-  });
-  const data = await res.json();
-  displayResults(data);
+  try {
+    const res = await fetch("/api/workflow/action-items", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      displayResults({ error: errorData.error || `Server error: ${res.status}` });
+      return;
+    }
+    
+    const data = await res.json();
+    
+    if (data.error) {
+      displayResults({ error: data.error });
+    } else {
+      displayResults(data);
+    }
+  } catch (error) {
+    displayResults({ error: error.message });
+  }
 }
 
 async function getSummary() {
-  const res = await fetch("/api/workflow/summary", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ type: "executive" })
-  });
-  const data = await res.json();
-  displayResults(data);
+  try {
+    const res = await fetch("/api/workflow/summary", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "executive" })
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      displayResults({ error: errorData.error || `Server error: ${res.status}` });
+      return;
+    }
+    
+    const data = await res.json();
+    
+    if (data.error) {
+      displayResults({ error: data.error });
+    } else {
+      displayResults(data);
+    }
+  } catch (error) {
+    displayResults({ error: error.message });
+  }
 }
 
 async function riskAnalysis() {
-  const res = await fetch("/api/workflow/risk-analysis", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({})
-  });
-  const data = await res.json();
-  displayResults(data);
+  try {
+    const res = await fetch("/api/workflow/risk-analysis", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      displayResults({ error: errorData.error || `Server error: ${res.status}` });
+      return;
+    }
+    
+    const data = await res.json();
+    
+    if (data.error) {
+      displayResults({ error: data.error });
+    } else {
+      displayResults(data);
+    }
+  } catch (error) {
+    displayResults({ error: error.message });
+  }
 }
 
 function displayResults(data) {
   const container = document.getElementById("results");
-  container.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+  
+  if (data.error) {
+    container.innerHTML = `<div class="error-message">❌ ${data.error}</div>`;
+  } else {
+    container.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+  }
 }
 </script>
 {% endblock %}
+
+
+
+
+
 
 

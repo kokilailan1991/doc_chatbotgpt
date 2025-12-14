@@ -42,10 +42,28 @@ document.getElementById("resumeUploadForm").addEventListener("submit", async (e)
   formData.append("file", document.getElementById("resumeFile").files[0]);
   formData.append("file_id", "active");
   
-  const res = await fetch("/api/upload-multi", { method: "POST", body: formData });
-  const data = await res.json();
-  document.getElementById("status").innerText = data.message || data.error;
-  if (data.message) document.getElementById("actions").style.display = "block";
+  try {
+    const res = await fetch("/api/upload-multi", { method: "POST", body: formData });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      document.getElementById("status").innerText = "❌ " + (errorData.error || `Server error: ${res.status}`);
+      return;
+    }
+    
+    const data = await res.json();
+    
+    if (data.error) {
+      document.getElementById("status").innerText = "❌ " + data.error;
+    } else if (data.message) {
+      document.getElementById("status").innerText = "✅ " + data.message;
+      document.getElementById("actions").style.display = "block";
+    } else {
+      document.getElementById("status").innerText = "❌ Unexpected response format";
+    }
+  } catch (error) {
+    document.getElementById("status").innerText = "❌ Error: " + error.message;
+  }
 });
 
 document.getElementById("jdUploadForm").addEventListener("submit", async (e) => {
@@ -54,56 +72,148 @@ document.getElementById("jdUploadForm").addEventListener("submit", async (e) => 
   formData.append("file", document.getElementById("jdFile").files[0]);
   formData.append("file_id", "jd");
   
-  const res = await fetch("/api/upload-multi", { method: "POST", body: formData });
-  const data = await res.json();
-  document.getElementById("status").innerText += "\n" + (data.message || data.error);
+  try {
+    const res = await fetch("/api/upload-multi", { method: "POST", body: formData });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      document.getElementById("status").innerText += "\n❌ " + (errorData.error || `Server error: ${res.status}`);
+      return;
+    }
+    
+    const data = await res.json();
+    
+    if (data.error) {
+      document.getElementById("status").innerText += "\n❌ " + data.error;
+    } else if (data.message) {
+      document.getElementById("status").innerText += "\n✅ " + data.message;
+    } else {
+      document.getElementById("status").innerText += "\n❌ Unexpected response format";
+    }
+  } catch (error) {
+    document.getElementById("status").innerText += "\n❌ Error: " + error.message;
+  }
 });
 
 async function getATSScore() {
-  const res = await fetch("/api/resume/ats-score", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({})
-  });
-  const data = await res.json();
-  displayResults(data);
+  try {
+    const res = await fetch("/api/resume/ats-score", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      displayResults({ error: errorData.error || `Server error: ${res.status}` });
+      return;
+    }
+    
+    const data = await res.json();
+    
+    if (data.error) {
+      displayResults({ error: data.error });
+    } else {
+      displayResults(data);
+    }
+  } catch (error) {
+    displayResults({ error: error.message });
+  }
 }
 
 async function matchWithJD() {
-  const res = await fetch("/api/resume/match-jd", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ jd_file_id: "jd" })
-  });
-  const data = await res.json();
-  displayResults(data);
+  try {
+    const res = await fetch("/api/resume/match-jd", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jd_file_id: "jd" })
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      displayResults({ error: errorData.error || `Server error: ${res.status}` });
+      return;
+    }
+    
+    const data = await res.json();
+    
+    if (data.error) {
+      displayResults({ error: data.error });
+    } else {
+      displayResults(data);
+    }
+  } catch (error) {
+    displayResults({ error: error.message });
+  }
 }
 
 async function getFullReport() {
-  const res = await fetch("/api/resume/full-report", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ jd_file_id: "jd" })
-  });
-  const data = await res.json();
-  displayResults(data);
+  try {
+    const res = await fetch("/api/resume/full-report", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jd_file_id: "jd" })
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      displayResults({ error: errorData.error || `Server error: ${res.status}` });
+      return;
+    }
+    
+    const data = await res.json();
+    
+    if (data.error) {
+      displayResults({ error: data.error });
+    } else {
+      displayResults(data);
+    }
+  } catch (error) {
+    displayResults({ error: error.message });
+  }
 }
 
 async function rewriteResume() {
-  const res = await fetch("/api/resume/rewrite", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ improvements: [] })
-  });
-  const data = await res.json();
-  displayResults(data);
+  try {
+    const res = await fetch("/api/resume/rewrite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ improvements: [] })
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }));
+      displayResults({ error: errorData.error || `Server error: ${res.status}` });
+      return;
+    }
+    
+    const data = await res.json();
+    
+    if (data.error) {
+      displayResults({ error: data.error });
+    } else {
+      displayResults(data);
+    }
+  } catch (error) {
+    displayResults({ error: error.message });
+  }
 }
 
 function displayResults(data) {
   const container = document.getElementById("results");
-  container.innerHTML = `<div class="result-card"><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+  
+  if (data.error) {
+    container.innerHTML = `<div class="error-message">❌ ${data.error}</div>`;
+  } else {
+    container.innerHTML = `<div class="result-card"><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+  }
 }
 </script>
 {% endblock %}
+
+
+
+
+
 
 
